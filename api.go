@@ -8,11 +8,38 @@ import (
 )
 
 func APIStateHandler(w http.ResponseWriter, r *http.Request) {
-	//Get the current game state
-	w.Header().Set("Content-Type", "application/json")
-	e := json.NewEncoder(w)
-	//TODO Filter it for the authenticated user
-	e.Encode(theGame.Game)
+	switch r.Method {
+	case http.MethodGet:
+		//Get the current game state
+		w.Header().Set("Content-Type", "application/json")
+		e := json.NewEncoder(w)
+		//TODO Filter it for the authenticated user
+		e.Encode(theGame.Game)
+	case http.MethodPut:
+		//TODO Only admins can do this
+		g := Game{}
+		d := json.NewDecoder(r.Body)
+		err := d.Decode(&g)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			fmt.Println(err)
+		}
+		//Fire a game update event with the changes
+		err = theGame.SubmitEvent(r.Context(), GameEvent{
+			BaseEvent: BaseEvent{Type: TypeGameUpdate},
+			Game:      g,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			fmt.Println(err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		e := json.NewEncoder(w)
+		//TODO Filter it for the authenticated user
+		e.Encode(theGame.Game)
+	default:
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 func APIEventHandler(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +80,23 @@ func APIEventHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		e = pe
 	case TypePlayerNominate:
+		pe := PlayerPlayerEvent{}
+		err = json.Unmarshal(b, &pe)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			fmt.Println(err)
+			return
+		}
+		e = pe
 	case TypePlayerLegislate:
+		pe := PlayerLegislateEvent{}
+		err = json.Unmarshal(b, &pe)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			fmt.Println(err)
+			return
+		}
+		e = pe
 	case TypePlayerInvestigate:
 	case TypePlayerSpecialElection:
 	default:
@@ -61,19 +104,12 @@ func APIEventHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
-	//Validate the event against the game state
 	if e == nil {
 		http.Error(w, "Nil Event", http.StatusBadRequest)
 		return
 	}
-	err = theGame.Validate(r.Context(), e)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		fmt.Println(err)
-		return
-	}
-
-	err = theGame.SubmitEvent(e)
+	//Validate & submit the event against the game state
+	err = theGame.SubmitEvent(r.Context(), e)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		fmt.Println(err)

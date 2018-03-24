@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -30,14 +31,11 @@ func NewSecretHitler() *SecretHitler {
 		for {
 			select {
 			case e := <-ec:
-				//If the event is game end, then return
-				if e.GetType() == TypeGameEnd {
-					break
-				}
+				//TODO If the game is over, then return
 				if nes, err := ret.Engine(e); err == nil {
 					fmt.Println("engine: Produced:", nes)
 					for _, ne := range nes {
-						err = ret.SubmitEvent(ne)
+						err = ret.SubmitEvent(context.TODO(), ne)
 						if err != nil {
 							fmt.Println("Apply Error:", err)
 						}
@@ -60,9 +58,14 @@ type SecretHitler struct {
 	subscribers map[string]chan<- Event
 }
 
-func (sh *SecretHitler) SubmitEvent(e Event) error {
+func (sh *SecretHitler) SubmitEvent(ctx context.Context, e Event) error {
 	sh.m.Lock()
 	defer sh.m.Unlock()
+	//Do the validate here
+	err := sh.Validate(ctx, e)
+	if err != nil {
+		return err
+	}
 	g, ne, err := sh.Apply(e)
 	if err != nil {
 		return err
@@ -95,7 +98,9 @@ type Game struct {
 	State                      string   `json:"state,omitempty"`
 	Draw                       []string `json:"draw,omitempty"`
 	Discard                    []string `json:"discard,omitempty"`
-	Board                      Board    `json:"board,omitempty"`
+	Liberal                    int      `json:"liberal,omitempty"`
+	Facist                     int      `json:"facist,omitempty"`
+	FailedVotes                int      `json:"failedVotes,omitempty"`
 	Players                    []Player `json:"players,omitempty"`
 	Round                      Round    `json:"round,omitempty"`
 	NextPresidentID            string   `json:"nextPresidentID,omitempty"`
@@ -103,6 +108,7 @@ type Game struct {
 	PreviousChancellorID       string   `json:"previousChancellorID,omitempty"`
 	SpecialElectionRoundID     int      `json:"specialElectionRoundID,omitempty"`
 	SpecialElectionPresidentID string   `json:"specialElectionPresidentID,omitempty"`
+	WinningParty               string   `json:"winningParty,omitempty"`
 }
 
 func (g Game) GetPlayerByID(id string) (Player, error) {
@@ -112,12 +118,6 @@ func (g Game) GetPlayerByID(id string) (Player, error) {
 		}
 	}
 	return Player{}, errors.New("Not Found")
-}
-
-type Board struct {
-	Liberal     int `json:"liberal"`
-	Facist      int `json:"facist"`
-	FailedVotes int `json:"failedVotes"`
 }
 
 type Player struct {
@@ -132,12 +132,13 @@ type Player struct {
 }
 
 type Round struct {
-	ID              int      `json:"id"`
+	ID              int      `json:"id,omitempty"`
 	PresidentID     string   `json:"presidentID,omitempty"`
 	ChancellorID    string   `json:"chancellorID,omitempty"`
 	State           string   `json:"state,omitempty"`
 	Votes           []Vote   `json:"votes,omitempty"`
 	Policies        []string `json:"policies,omitempty"`
+	EnactedPolicy   string   `json:"enactedPolicy,omitempty"`
 	ExecutiveAction string   `json:"executiveAction,omitempty"`
 }
 

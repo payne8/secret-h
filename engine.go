@@ -1,6 +1,13 @@
 package main
 
-import ()
+import (
+	"math/rand"
+	"time"
+)
+
+func init() {
+	rand.Seed(time.Now().UTC().UnixNano())
+}
 
 func nextIndex(len, idx int) int {
 	if idx+1 >= len {
@@ -9,15 +16,15 @@ func nextIndex(len, idx int) int {
 	return idx + 1
 }
 
-func (gs Game) createNextRound() RoundStartEvent {
-	rse := RoundStartEvent{}
-	rse.Type = TypeRoundStart
-	rse.RoundID = gs.Round.ID + 1
+func (gs Game) createNextRound() []Event {
+	ge := GameEvent{}
+	ge.Type = TypeGameUpdate
+	ge.Game.Round.ID = gs.Round.ID + 1
 
 	//Is the next round a special election?
-	if rse.RoundID == gs.SpecialElectionRoundID {
-		rse.PresidentID = gs.SpecialElectionPresidentID
-		rse.NextPresidentID = gs.NextPresidentID
+	if ge.Game.Round.ID == gs.SpecialElectionRoundID {
+		ge.Game.Round.PresidentID = gs.SpecialElectionPresidentID
+		ge.Game.NextPresidentID = gs.NextPresidentID
 	} else {
 		//Go to the next unexecuted president in the array
 		//Next president is the next one in the array, that's not dead
@@ -36,7 +43,7 @@ func (gs Game) createNextRound() RoundStartEvent {
 				pi = nextIndex(len(gs.Players), pi)
 			}
 		}
-		rse.PresidentID = gs.Players[pi].ID
+		ge.Game.Round.PresidentID = gs.Players[pi].ID
 		npi := nextIndex(len(gs.Players), pi)
 		for {
 			//If president index is not dead, break
@@ -46,10 +53,37 @@ func (gs Game) createNextRound() RoundStartEvent {
 				npi = nextIndex(len(gs.Players), npi)
 			}
 		}
-		rse.NextPresidentID = gs.Players[npi].ID
+		ge.Game.NextPresidentID = gs.Players[npi].ID
 	}
 
-	return rse
+	return []Event{ge, RequestEvent{
+		BaseEvent: BaseEvent{Type: TypeRequestNominate},
+		PlayerID:  ge.Game.Round.PresidentID,
+	}}
+}
+
+func (g Game) executiveAction() string {
+	switch g.Facist {
+	case 1:
+		if len(g.Players) > 8 {
+			return ExecutiveActionInvestigate
+		}
+	case 2:
+		if len(g.Players) > 6 {
+			return ExecutiveActionInvestigate
+		}
+	case 3:
+		if len(g.Players) > 6 {
+			return ExecutiveActionSpecialElection
+		} else {
+			return ExecutiveActionPeek
+		}
+	case 4:
+		return ExecutiveActionExecute
+	case 5:
+		return ExecutiveActionExecute
+	}
+	return ""
 }
 
 //TODO The engine will read the incoming event and process it to see if a new event
@@ -70,7 +104,48 @@ func (g Game) Engine(e Event) ([]Event, error) {
 			}
 		}
 		if allReady {
-			ret = append(ret, NewGameStartEvent(len(g.Players)))
+			ge := GameEvent{}
+			ge.Type = TypeGameUpdate
+			ge.Game.Draw = make([]string, 0)
+			for i := 0; i < 11; i++ {
+				ge.Game.Draw = append(ge.Game.Draw, PolicyFacist)
+			}
+			for i := 0; i < 6; i++ {
+				ge.Game.Draw = append(ge.Game.Draw, PolicyLiberal)
+			}
+			rand.Shuffle(len(ge.Game.Draw), func(i, j int) {
+				ge.Game.Draw[i], ge.Game.Draw[j] = ge.Game.Draw[j], ge.Game.Draw[i]
+			})
+			roles := []string{RoleLiberal, RoleLiberal, RoleLiberal, RoleHitler, RoleFacist}
+			if len(g.Players) > 5 {
+				roles = append(roles, RoleLiberal)
+			}
+			if len(g.Players) > 6 {
+				roles = append(roles, RoleFacist)
+			}
+			if len(g.Players) > 7 {
+				roles = append(roles, RoleLiberal)
+			}
+			if len(g.Players) > 8 {
+				roles = append(roles, RoleFacist)
+			}
+			if len(g.Players) > 9 {
+				roles = append(roles, RoleLiberal)
+			}
+			rand.Shuffle(len(roles), func(i, j int) {
+				roles[i], roles[j] = roles[j], roles[i]
+			})
+			for i, p := range g.Players {
+				p.Role = roles[i]
+				if p.Role == RoleLiberal {
+					p.Party = PartyLiberal
+				} else {
+					p.Party = PartyFacist
+				}
+				ge.Game.Players = append(ge.Game.Players, p)
+			}
+			ge.Game.NextPresidentID = g.Players[rand.Intn(len(g.Players)-1)].ID
+			ret = append(ret, ge)
 		}
 	case TypePlayerAcknowledge:
 		allAck := true
@@ -80,14 +155,11 @@ func (g Game) Engine(e Event) ([]Event, error) {
 			}
 		}
 		if allAck {
-			ret = append(ret, g.createNextRound())
+			ret = append(ret, g.createNextRound()...)
 		}
 	case TypePlayerNominate:
-		//Trigger a round.vote_start
-		ret = append(ret, RoundStateEvent{
-			BaseEvent: BaseEvent{Type: TypeRoundVoteStart},
-			RoundID:   g.Round.ID,
-			State:     RoundStateVoting,
+		ret = append(ret, RequestEvent{
+			BaseEvent: BaseEvent{Type: TypeRequestVote},
 		})
 	case TypePlayerVote:
 		//If all the votes are in...
@@ -109,56 +181,213 @@ func (g Game) Engine(e Event) ([]Event, error) {
 			}
 		}
 		if allIn {
-			//TODO If secret hitler is elected chancellor with 3 facist polices down, facists win
-			ret = append(ret, RoundVoteEndEvent{
-				BaseEvent: BaseEvent{Type: TypeRoundVoteEnd},
-				RoundID:   g.Round.ID,
-				Votes:     g.Round.Votes,
-				Succeeded: ((float64(c) / float64(len(g.Round.Votes))) * 100) > 50.0,
-			})
-		}
-	case TypePlayerLegislate:
-		//TODO Trigger a legistlate chancellor with the remaining cards or
-		//TODO Trigger a legislate enact with the remaining card
-	case TypePlayerInvestigate:
-		//TODO Trigger a executive action enact with the revealed information
-	case TypePlayerSpecialElection:
-		//TODO Trigger a executive action enact that adds the special election state
-	case TypePlayerExecute:
-	case TypeRoundStart:
-		ret = append(ret, RoundStateEvent{
-			BaseEvent: BaseEvent{Type: TypeRoundNominateRequest},
-			RoundID:   g.Round.ID,
-			State:     RoundStateNominating,
-		})
-	case TypeRoundVoteEnd:
-		//TODO If the vote failed, enact a policy if failed votes = 3
-		if g.Board.FailedVotes >= 3 {
-			ret = append(ret, RoundLegislateEnact{
-				BaseEvent: BaseEvent{Type: TypeRoundLegislateEnact},
-				RoundID:   g.Round.ID,
-				Policy:    g.Draw[len(g.Draw)-1],
-			})
-		}
-		//TODO Pop the top policy off the draw pile and enact it
-		//TODO Should I just trigger a policy enact event?, let the logic occour in there?
-	case TypeRoundLegislateEnact:
-		//TODO Send an event to play the last card off the draw pile
-		//TODO If the draw pile is 2 or less cards, re-shuffle
-		//TODO If there was an executive action under the played policy, trigger that
-	case TypeRoundExecutiveActionEnact:
-		//If secret hitler is executed liberals win
-		for _, p := range g.Players {
-			if p.Role == RoleHitler && p.ExecutedBy != "" {
-				//End the game now
-				ret = append(ret, GameEndEvent{
-					BaseEvent:    BaseEvent{Type: TypeGameEnd},
-					WinningParty: PartyLiberal,
+			succeeded := ((float64(c) / float64(len(g.Round.Votes))) * 100) > 50.0
+			if succeeded {
+				//If secret hitler is elected chancellor with 3 facist polices down, facists win
+				if g.Facist > 2 {
+					for _, p := range g.Players {
+						if p.ID == g.Round.ChancellorID {
+							if p.Role == RoleHitler {
+								ret = append(ret, GameEvent{
+									BaseEvent: BaseEvent{Type: TypeGameUpdate},
+									Game: Game{
+										State:        GameStateFinished,
+										WinningParty: PartyFacist,
+									},
+								})
+								return ret, nil
+							}
+						}
+					}
+				}
+				//Start legislating
+				ret = append(ret, GameEvent{
+					BaseEvent: BaseEvent{Type: TypeGameUpdate},
+					Game: Game{
+						Draw:                 g.Draw[:len(g.Draw)-3],
+						Discard:              g.Discard,
+						FailedVotes:          0,
+						PreviousPresidentID:  g.Round.PresidentID,
+						PreviousChancellorID: g.Round.ChancellorID,
+						Round: Round{
+							Policies: g.Draw[len(g.Draw)-3:],
+							State:    RoundStateLegislating,
+						},
+					},
 				})
+				ret = append(ret, RequestEvent{
+					BaseEvent: BaseEvent{Type: TypeRequestLegislate},
+					Policies:  g.Draw[len(g.Draw)-3:],
+				})
+			} else {
+				//If the vote failed, enact a policy if failed votes = 3
+				if g.FailedVotes >= 3 {
+					//Pop the top policy off the draw pile and enact it
+					tp := g.Draw[len(g.Draw)-1]
+					if tp == PolicyLiberal {
+						g.Liberal++
+					} else {
+						g.Facist++
+					}
+					g.Draw = g.Draw[:len(g.Draw)-1]
+					ge := GameEvent{
+						BaseEvent: BaseEvent{Type: TypeGameUpdate},
+						Game: Game{
+							Facist:  g.Facist,
+							Liberal: g.Liberal,
+							Draw:    g.Draw[:len(g.Draw)-1],
+							Discard: g.Discard,
+						},
+					}
+					if g.Facist > 5 {
+						ge.Game.State = GameStateFinished
+						ge.Game.WinningParty = PartyFacist
+					}
+					if g.Liberal > 4 {
+						ge.Game.State = GameStateFinished
+						ge.Game.WinningParty = PartyLiberal
+					}
+					ret = append(ret, ge)
+				} else {
+					//End the round now, start a new one
+					ret = append(ret, g.createNextRound()...)
+				}
 			}
 		}
-	case TypeRoundEnd:
-		ret = append(ret, g.createNextRound())
+	case TypePlayerLegislate:
+		le := e.(PlayerLegislateEvent)
+		ge := GameEvent{
+			BaseEvent: BaseEvent{Type: TypeGameUpdate},
+		}
+		//First subtract the discarded policy from the round policies
+		ge.Game.Round.Policies = removeElement(g.Round.Policies, le.Discard)
+		//Second add it to the game discard pile
+		ge.Game.Draw = g.Draw
+		ge.Game.Discard = append(g.Discard, le.Discard)
+		//Now if there is only one remaining, play it
+		if len(ge.Game.Round.Policies) == 1 {
+			ge.Game.Round.EnactedPolicy = ge.Game.Round.Policies[0]
+			if ge.Game.Round.EnactedPolicy == PolicyLiberal {
+				ge.Game.Liberal = g.Liberal + 1
+			} else {
+				ge.Game.Facist = g.Facist + 1
+				//If a card was played on a facist, trigger an executive action, or ea request
+				ge.Game.Round.ExecutiveAction = g.executiveAction()
+			}
+			if g.Facist > 5 {
+				ge.Game.State = GameStateFinished
+				ge.Game.WinningParty = PartyFacist
+			}
+			if g.Liberal > 4 {
+				ge.Game.State = GameStateFinished
+				ge.Game.WinningParty = PartyLiberal
+			}
+			ge.Game.Round.Policies = []string{}
+		}
+		//Shuffle if there are < 3 policies in the draw pile
+		if len(ge.Game.Draw) < 3 {
+			ge.Game.Draw = append(g.Draw, g.Discard...)
+			ge.Game.Discard = []string{}
+			rand.Shuffle(len(ge.Game.Draw), func(i, j int) {
+				ge.Game.Draw[i], ge.Game.Draw[j] = ge.Game.Draw[j], ge.Game.Draw[i]
+			})
+		}
+
+		ret = append(ret, ge)
+		//Trigger an executive action
+		if ge.Game.Round.EnactedPolicy == PolicyFacist {
+			switch ge.Game.Round.ExecutiveAction {
+			case ExecutiveActionInvestigate:
+				ret = append(ret, RequestEvent{
+					BaseEvent:       BaseEvent{Type: TypeRequestExecutiveAction},
+					PlayerID:        g.Round.PresidentID,
+					ExecutiveAction: ExecutiveActionInvestigate,
+				})
+			case ExecutiveActionPeek:
+				ret = append(ret, InformationEvent{
+					BaseEvent: BaseEvent{Type: TypeGameInformation},
+					PlayerID:  g.Round.PresidentID,
+					Policies:  g.Draw[len(g.Draw)-3:],
+				})
+				ret = append(ret, g.createNextRound()...)
+			case ExecutiveActionSpecialElection:
+				ret = append(ret, RequestEvent{
+					BaseEvent:       BaseEvent{Type: TypeRequestExecutiveAction},
+					PlayerID:        g.Round.PresidentID,
+					ExecutiveAction: ExecutiveActionSpecialElection,
+				})
+			case ExecutiveActionExecute:
+				ret = append(ret, RequestEvent{
+					BaseEvent:       BaseEvent{Type: TypeRequestExecutiveAction},
+					PlayerID:        g.Round.PresidentID,
+					ExecutiveAction: ExecutiveActionExecute,
+				})
+			default:
+				//If no exeutive action, start a new round
+				ret = append(ret, g.createNextRound()...)
+			}
+		}
+		if len(g.Round.Votes) > 1 {
+			//Trigger a legislate chancellor with the remaining cards
+			ret = append(ret, RequestEvent{
+				BaseEvent: BaseEvent{Type: TypeRequestLegislate},
+				PlayerID:  g.Round.ChancellorID,
+				Policies:  g.Round.Policies,
+			})
+		}
+	case TypePlayerInvestigate:
+		//Give out the information!
+		te := e.(PlayerPlayerEvent)
+		party := PartyMasked
+		for _, p := range g.Players {
+			if p.ID == te.OtherPlayerID {
+				party = p.Party
+			}
+		}
+		ret = append(ret, InformationEvent{
+			BaseEvent: BaseEvent{Type: TypeGameInformation},
+			PlayerID:  g.Round.PresidentID,
+			Party:     party,
+			Policies:  g.Draw[len(g.Draw)-3:],
+		})
+		ret = append(ret, g.createNextRound()...)
+	case TypePlayerSpecialElection:
+		ret = append(ret, g.createNextRound()...)
+	case TypePlayerExecute:
+		//If hitler is assasinated, game over for facists
+		for _, p := range g.Players {
+			if p.Role == RoleHitler && p.ExecutedBy != "" {
+				ret = append(ret, GameEvent{
+					BaseEvent: BaseEvent{Type: TypeGameUpdate},
+					Game: Game{
+						State:        GameStateFinished,
+						WinningParty: PartyLiberal,
+					},
+				})
+				return ret, nil
+			}
+		}
+		ret = append(ret, g.createNextRound()...)
 	}
 	return ret, nil
+}
+
+func removeElement(a []string, e string) []string {
+	i := -1
+	for c, v := range a {
+		if v == e {
+			i = c
+			break
+		}
+	}
+	if i >= 0 {
+		a[i] = a[len(a)-1]
+		a = a[:len(a)-1]
+	}
+	return a
+}
+
+func removeAtIndex(s []string, i int) []string {
+	s[len(s)-1], s[i] = s[i], s[len(s)-1]
+	return s[:len(s)-1]
 }

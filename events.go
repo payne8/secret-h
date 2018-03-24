@@ -1,13 +1,8 @@
 package main
 
 import (
-	"math/rand"
 	"time"
 )
-
-func init() {
-	rand.Seed(time.Now().UTC().UnixNano())
-}
 
 const (
 	GameStateLobby    = ""
@@ -37,19 +32,14 @@ const (
 	TypePlayerSpecialElection = "player.special_election"
 	TypePlayerExecute         = "player.execute"
 
-	TypeGameStart   = "game.start"
-	TypeGameShuffle = "game.shuffle"
-	TypeGameEnd     = "game.end"
+	TypeRequestAcknowledge     = "request.acknowledge"
+	TypeRequestVote            = "request.vote"
+	TypeRequestNominate        = "request.nominate"
+	TypeRequestLegislate       = "request.legislate"
+	TypeRequestExecutiveAction = "request.executive_action"
 
-	TypeRoundStart                  = "round.start"
-	TypeRoundNominateRequest        = "round.nominate_request"
-	TypeRoundVoteStart              = "round.vote_start"
-	TypeRoundVoteEnd                = "round.vote_end"
-	TypeRoundLegislateRequest       = "round.legislate_request"
-	TypeRoundLegislateEnact         = "round.legislate_enact"
-	TypeRoundExecutiveActionRequest = "round.executive_action_request"
-	TypeRoundExecutiveActionEnact   = "round.executive_action_enact"
-	TypeRoundEnd                    = "round.end"
+	TypeGameInformation = "game.information"
+	TypeGameUpdate      = "game.update"
 )
 
 type Event interface {
@@ -79,7 +69,8 @@ type PlayerPlayerEvent struct {
 
 type PlayerVoteEvent struct {
 	BaseEvent
-	Vote Vote `json:"vote"`
+	PlayerID string `json:"playerID"`
+	Vote     bool   `json:"vote"`
 }
 
 type PlayerLegislateEvent struct {
@@ -89,105 +80,24 @@ type PlayerLegislateEvent struct {
 	Veto     bool
 }
 
-func NewGameStartEvent(numPlayers int) GameStartEvent {
-	ret := GameStartEvent{}
-	ret.Type = TypeGameStart
-	ret.Draw = make([]string, 0)
-	for i := 0; i < 11; i++ {
-		ret.Draw = append(ret.Draw, PolicyFacist)
-	}
-	for i := 0; i < 6; i++ {
-		ret.Draw = append(ret.Draw, PolicyLiberal)
-	}
-	rand.Shuffle(len(ret.Draw), func(i, j int) {
-		ret.Draw[i], ret.Draw[j] = ret.Draw[j], ret.Draw[i]
-	})
-	ret.Roles = []string{RoleLiberal, RoleLiberal, RoleLiberal, RoleHitler, RoleFacist}
-	if numPlayers > 5 {
-		ret.Roles = append(ret.Roles, RoleLiberal)
-	}
-	if numPlayers > 6 {
-		ret.Roles = append(ret.Roles, RoleFacist)
-	}
-	if numPlayers > 7 {
-		ret.Roles = append(ret.Roles, RoleLiberal)
-	}
-	if numPlayers > 8 {
-		ret.Roles = append(ret.Roles, RoleFacist)
-	}
-	if numPlayers > 9 {
-		ret.Roles = append(ret.Roles, RoleLiberal)
-	}
-	rand.Shuffle(len(ret.Roles), func(i, j int) {
-		ret.Roles[i], ret.Roles[j] = ret.Roles[j], ret.Roles[i]
-	})
-	ret.InitialPresidentIndex = rand.Intn(numPlayers - 1)
-	return ret
-}
-
-type GameStartEvent struct {
+type GameEvent struct {
 	BaseEvent
-	Draw                  []string `json:"draw"`
-	Roles                 []string `json:"roles"`
-	InitialPresidentIndex int      `json:"initialPresidentIndex"`
+	Game Game `json:"game"`
 }
 
-type GameShuffleEvent struct {
+type InformationEvent struct {
 	BaseEvent
-	Draw []string `json:"draw"`
+	PlayerID      string   `json:"playerID"`
+	OtherPlayerID string   `json:"otherPlayerID,omitempty"`
+	Policies      []string `json:"policies,omitempty"`
+	Party         string   `json:"party,omitempty"`
 }
 
-type GameEndEvent struct {
+type RequestEvent struct {
 	BaseEvent
-	WinningParty string `json:"winningParty"`
-}
-
-type RoundStartEvent struct {
-	BaseEvent
-	RoundID         int
-	PresidentID     string
-	NextPresidentID string
-}
-
-type RoundStateEvent struct {
-	BaseEvent
-	RoundID int
-	State   string
-}
-
-type RoundRequestEvent struct {
-	BaseEvent
-	PlayerID int      `json:"playerID"`
-	RoundID  int      `json:"roundID"`
-	Policies []string `json:"policies,omitempty"`
-}
-
-type RoundLegislateEnact struct {
-	BaseEvent
-	RoundID int
-	Policy  string
-}
-
-type RoundExecutiveActionEnact struct {
-	BaseEvent
-	RoundID           int
-	ExecutiveAction   string
-	PlayerID          string
-	OtherPlayerID     string
-	InvestigatedParty string
-	PeekCards         []string
-}
-
-type RoundEndEvent struct {
-	PreviousPresidentID  string `json:"previousPresidentID"`
-	PreviousChancellorID string `json:"previousChancellorID"`
-}
-
-type RoundVoteEndEvent struct {
-	BaseEvent
-	RoundID         int
-	Votes           []Vote
-	Succeeded       bool
-	FailedVoteCount int
-	RoundState      string
+	PlayerID        string   `json:"playerID"`
+	PresidentID     string   `json:"presidentID,omitempty"`
+	ChancellorID    string   `json:"chancellorID,omitempty"`
+	ExecutiveAction string   `json:"executiveAction,omitempty"`
+	Policies        []string `json:"policies,omitempty"`
 }

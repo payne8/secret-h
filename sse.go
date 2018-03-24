@@ -26,6 +26,9 @@ func ServerSentEventsHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, ": Getting Started\n\n")
+	flusher.Flush()
 
 	//TODO Stream events from the last event id specified
 	//r.Header.Get("Last-Event-Id")

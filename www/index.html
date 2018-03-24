@@ -3,9 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <title>Secret Hitler Server</title>
+<script>
+function playerJoin(id,name){
+fetch("/api/event", {
+method: 'POST',
+body: JSON.stringify({
+"type":"player.join",
+"player":{
+	"id":id,
+	"name":name
+}}), 
+headers: new Headers({'Content-Type': 'application/json'})
+}).then(res => res.json())
+.catch(error => console.error('Error:', error))
+.then(response => console.log('Success:', response));
+}
+function playerReady(id){
+fetch("/api/event", {
+method: 'POST',
+body: JSON.stringify({
+"type":"player.ready",
+"player":{
+	"id":id,
+	"ready":true
+}}), 
+headers: new Headers({'Content-Type': 'application/json'})
+}).then(res => res.json())
+.catch(error => console.error('Error:', error))
+.then(response => console.log('Success:', response));
+}
+function playerAcknowledge(id,party,role){
+fetch("/api/event", {
+method: 'POST',
+body: JSON.stringify({
+"type":"player.acknowledge",
+"player":{
+	"id":id,
+	"acknowledge":true,
+	"party":party,
+	"role":role
+}}), 
+headers: new Headers({'Content-Type': 'application/json'})
+}).then(res => res.json())
+.catch(error => console.error('Error:', error))
+.then(response => console.log('Success:', response));
+}
+function playerNominate(id,otherPlayerId){
+fetch("/api/event", {
+method: 'POST',
+body: JSON.stringify({
+"type":"player.nominate",
+"playerID": id,
+"otherPlayerID":otherPlayerId
+}), 
+headers: new Headers({'Content-Type': 'application/json'})
+}).then(res => res.json())
+.catch(error => console.error('Error:', error))
+.then(response => console.log('Success:', response));
+}
+function playerVote(id,vote){
+fetch("/api/event", {
+method: 'POST',
+body: JSON.stringify({
+"type":"player.vote",
+"vote": {"playerID":id,"vote":vote}
+}), 
+headers: new Headers({'Content-Type': 'application/json'})
+}).then(res => res.json())
+.catch(error => console.error('Error:', error))
+.then(response => console.log('Success:', response));
+}
+</script>
 </head>
 
 <body>
 	<h1>Welcome</h1>
+<script>
+var source = new EventSource('sse');
+
+source.addEventListener('state', function(e) {
+	console.log(e.data);
+}, false);
+</script>
 </body>
 </html> 

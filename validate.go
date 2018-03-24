@@ -88,13 +88,13 @@ func (g Game) Validate(ctx context.Context, e Event) error {
 			return errors.New("Players can only vote while the round is in the voting state")
 		}
 		for _, v := range g.Round.Votes {
-			if pve.Vote.PlayerID == v.PlayerID {
+			if pve.PlayerID == v.PlayerID {
 				return errors.New("Players can only vote once per round")
 			}
 		}
 		found := false
 		for _, p := range g.Players {
-			if p.ID == pve.Vote.PlayerID {
+			if p.ID == pve.PlayerID {
 				found = true
 				if p.ExecutedBy != "" {
 					return errors.New("Executed players can't vote")
