@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	GameStateLobby    = ""
+	GameStateLobby    = "lobby"
 	GameStateInit     = "init"
 	GameStateStarted  = "started"
 	GameStateFinished = "finished"

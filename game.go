@@ -24,6 +24,7 @@ const (
 
 func NewSecretHitler() *SecretHitler {
 	ret := new(SecretHitler)
+	ret.State = "lobby"
 	ret.subscribers = make(map[string]chan<- Event)
 	ec := make(chan Event)
 	ret.subscribers["engine"] = ec
