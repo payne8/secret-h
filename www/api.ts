@@ -1,5 +1,3 @@
-const API = process.env.NODE_ENV !== 'production' ? `http://localhost:8080` : '';
-
 
 export function initSSE() {
   var source = new EventSource('sse');
@@ -28,7 +26,7 @@ function makeHTTPError(msg: string, response: Response) {
 }
 
 export function fetchJSON(input: RequestInfo, init: RequestInit = {}) {
-  return fetch(API + input, {
+  return fetch(input, {
     ...init,
     method: 'GET',
     headers: {

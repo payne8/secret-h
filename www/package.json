@@ -5,17 +5,19 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "parcel index.html",
+    "start": "node dev-server",
     "build": "parcel build index.ts -d dist"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "parcel-bundler": "^1.6.2",
-    "typescript": "^2.7.2",
     "@types/react": "^16.0.41",
-    "@types/react-dom": "^16.0.4"
+    "@types/react-dom": "^16.0.4",
+    "express": "^4.16.3",
+    "http-proxy-middleware": "^0.18.0",
+    "parcel-bundler": "^1.6.2",
+    "typescript": "^2.7.2"
   },
   "dependencies": {
     "react": "^16.2.0",
