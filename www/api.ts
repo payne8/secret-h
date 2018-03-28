@@ -1,9 +1,11 @@
+import { Events } from './types';
 
 export function initSSE() {
-  var source = new EventSource('sse');
-
+  let sourceURL = process.env.NODE_ENV === 'production' ? '/sse' : 'http://localhost:8080/sse';
+  const source = new EventSource(sourceURL);
+  source.onerror = console.error;
   source.addEventListener('state', (e: any) => {
-    console.log(e.data);
+    console.log(e);
   }, false);
 }
 
@@ -28,7 +30,7 @@ function makeHTTPError(msg: string, response: Response) {
 export function fetchJSON(input: RequestInfo, init: RequestInit = {}) {
   return fetch(input, {
     ...init,
-    method: 'GET',
+    method: init.method || 'GET',
     headers: {
       ...init.headers,
       'Content-Type': 'application/json'
@@ -41,27 +43,24 @@ export function fetchJSON(input: RequestInfo, init: RequestInit = {}) {
       throw makeHTTPError(`Request to ${res.url} rejected with a status of ${res.status}`, res);
     }
   })
-  .then(res => res.json());
+  .then(res => res.json().catch(err => ''));
 }
 
 export function isGameLobby(): Promise<boolean> {
   return fetchJSON('/api/state').then(data => data.state === 'lobby');
 }
 
-export function playerJoin(id: string, name: string) {
-  fetch("/api/event", {
+export function joinPlayer(id: string, name: string) {
+  return fetchJSON(`api/event`, {
     method: 'POST',
     body: JSON.stringify({
-      "type": "player.join",
-      "player": {
-        "id": id,
-        "name": name
+      type: Events.TypePlayerJoin,
+      player: {
+        id,
+        name
       }
-    }),
-    headers: new Headers({ 'Content-Type': 'application/json' })
-  }).then(res => res.json())
-    .catch(error => console.error('Error:', error))
-    .then(response => console.log('Success:', response));
+    })
+  });
 }
 
 export function playerReady(id: string) {

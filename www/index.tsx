@@ -2,35 +2,29 @@
 
 import * as React from 'react';
 import { render } from 'react-dom';
-import { isGameLobby } from './api';
-import { Async } from './components/Async';
+import { BrowserRouter, Route } from 'react-router-dom';
+import { Lobby } from './routes/Lobby';
+import { Join } from './routes/Join';
+import { initSSE } from './api';
+initSSE(); //TODO this doesn't go here
 
 class App extends React.Component {
   render() {
     return (
       <div>
-        <header>
-          Secret H logo here
-        </header>
-        <div>
-          <Async
-            load={isGameLobby}
-            render={(isGameLobby) => (
-              <div>
-                {isGameLobby &&
-                  <button>Join</button>
-                }
-                {!isGameLobby &&
-                  <button>Observe</button>
-                }
-              </div>
-            )}
-          />
-        </div>
+        <Route exact path="/" component={Lobby} />
+        <Route path="/join" component={Join} />
+        <Route path="/observe" component={() => <span>Not implemented yet</span>} />
       </div>
     );
   }
 }
 
+const SecretH = () => (
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
+);
+
 // mount it to the DOM
-render(React.createElement(App), document.querySelector('#app'));
+render(React.createElement(SecretH), document.querySelector('#app'));
