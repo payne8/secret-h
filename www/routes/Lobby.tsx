@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Async } from '../components/Async';
-import { isGameLobby } from '../api';
 import { Link } from 'react-router-dom';
+import { appState } from '../state';
 
 export class Lobby extends React.Component {
   render() {
@@ -12,15 +12,15 @@ export class Lobby extends React.Component {
         </header>
         <div>
           <Async
-            load={isGameLobby}
-            render={(isGameLobby) => (
+            load={appState.fetchInitialState.bind(appState)}
+            render={({state}) => (
               <div>
-                {isGameLobby &&
+                {state === 'lobby' &&
                   <Link className="button" to={`/join`}>
                     Join
                   </Link>
                 }
-                {!isGameLobby &&
+                {state !== 'lobby' &&
                   <Link className="button" to={`/observe`}>
                     Join
                   </Link>

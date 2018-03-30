@@ -1,14 +1,5 @@
 import { Events } from './types';
 
-export function initSSE() {
-  let sourceURL = process.env.NODE_ENV === 'production' ? '/sse' : 'http://localhost:8080/sse';
-  const source = new EventSource(sourceURL);
-  source.onerror = console.error;
-  source.addEventListener('state', (e: any) => {
-    console.log(e);
-  }, false);
-}
-
 export class HTTPError extends Error {
   headers: object | Headers = {};
   status: number = 0;
@@ -46,8 +37,8 @@ export function fetchJSON(input: RequestInfo, init: RequestInit = {}) {
   .then(res => res.json().catch(err => ''));
 }
 
-export function isGameLobby(): Promise<boolean> {
-  return fetchJSON('/api/state').then(data => data.state === 'lobby');
+export function getInitialState() {
+  return fetchJSON('/api/state');
 }
 
 export function joinPlayer(id: string, name: string) {
@@ -64,19 +55,16 @@ export function joinPlayer(id: string, name: string) {
 }
 
 export function playerReady(id: string) {
-  fetch("/api/event", {
+  return fetchJSON("/api/event", {
     method: 'POST',
     body: JSON.stringify({
-      "type": "player.ready",
+      "type": Events.TypePlayerReady,
       "player": {
         "id": id,
         "ready": true
       }
-    }),
-    headers: new Headers({ 'Content-Type': 'application/json' })
-  }).then(res => res.json())
-    .catch(error => console.error('Error:', error))
-    .then(response => console.log('Success:', response));
+    })
+  });
 }
 
 export function playerAcknowledge(id: string, party: string, role: string) {

@@ -1,14 +1,21 @@
 import * as React from 'react';
-import { joinPlayer } from '../api';
+import { joinPlayer, playerReady } from '../api';
 import { Link } from 'react-router-dom';
+import { appState } from '../state';
 
-export class Join extends React.Component {
+export class Join extends React.Component<{ history: any }> {
   name: string = '';
 
   join = () => {
-    joinPlayer(this.name.toLowerCase().trim().replace(/\s+/, ''), this.name)
+    const player = {
+      id: this.name.toLowerCase().trim().replace(/\s+/, ''),
+      name: this.name
+    };
+    joinPlayer(player.id, player.name)
+      .then(() => playerReady(player.id))
       .then(() => {
-        // TODO go to MainGame or something
+        appState.setCurrentPlayer(player);
+        this.props.history.push('/game');
       })
       .catch(console.error);
   }
