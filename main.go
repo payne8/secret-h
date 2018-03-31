@@ -3,22 +3,23 @@ package main
 import (
 	"crypto/rand"
 	"fmt"
+	sh "github.com/murphysean/secrethitler"
 	"net/http"
 	"os"
 )
 
-var theGame *SecretHitler
+var theGame *sh.SecretHitler
 
 func main() {
 	//Specify a file to write all the events to
-	theGame = NewSecretHitler()
+	theGame = sh.NewSecretHitler()
 	var err error
-	theGame.log, err = os.OpenFile("log.json", os.O_RDWR|os.O_CREATE, 0755)
+	theGame.Log, err = os.OpenFile("log.json", os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	defer theGame.log.Close()
+	defer theGame.Log.Close()
 
 	http.HandleFunc("/api/state", APIStateHandler)
 	http.HandleFunc("/api/event", APIEventHandler)

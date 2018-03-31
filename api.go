@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	sh "github.com/murphysean/secrethitler"
 	"io/ioutil"
 	"net/http"
 )
@@ -17,7 +18,7 @@ func APIStateHandler(w http.ResponseWriter, r *http.Request) {
 		e.Encode(theGame.Game)
 	case http.MethodPut:
 		//TODO Only admins can do this
-		g := Game{}
+		g := sh.Game{}
 		d := json.NewDecoder(r.Body)
 		err := d.Decode(&g)
 		if err != nil {
@@ -25,8 +26,8 @@ func APIStateHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		//Fire a game update event with the changes
-		err = theGame.SubmitEvent(r.Context(), GameEvent{
-			BaseEvent: BaseEvent{Type: TypeGameUpdate},
+		err = theGame.SubmitEvent(r.Context(), sh.GameEvent{
+			BaseEvent: sh.BaseEvent{Type: sh.TypeGameUpdate},
 			Game:      g,
 		})
 		if err != nil {
@@ -46,7 +47,7 @@ func APIEventHandler(w http.ResponseWriter, r *http.Request) {
 	//Read the whole body into a buffer (to be read twice)
 	b, err := ioutil.ReadAll(r.Body)
 	//First determine the type of event being posted
-	bt := BaseEvent{}
+	bt := sh.BaseEvent{}
 	err = json.Unmarshal(b, &bt)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -54,15 +55,15 @@ func APIEventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//Second serialize it into that type of event object
-	var e Event
+	var e sh.Event
 	//Set the playerID on the event from authenticated context
 	switch bt.GetType() {
-	case TypePlayerJoin:
+	case sh.TypePlayerJoin:
 		fallthrough
-	case TypePlayerReady:
+	case sh.TypePlayerReady:
 		fallthrough
-	case TypePlayerAcknowledge:
-		pe := PlayerEvent{}
+	case sh.TypePlayerAcknowledge:
+		pe := sh.PlayerEvent{}
 		err = json.Unmarshal(b, &pe)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -70,8 +71,8 @@ func APIEventHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		e = pe
-	case TypePlayerVote:
-		pe := PlayerVoteEvent{}
+	case sh.TypePlayerVote:
+		pe := sh.PlayerVoteEvent{}
 		err = json.Unmarshal(b, &pe)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -79,8 +80,8 @@ func APIEventHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		e = pe
-	case TypePlayerNominate:
-		pe := PlayerPlayerEvent{}
+	case sh.TypePlayerNominate:
+		pe := sh.PlayerPlayerEvent{}
 		err = json.Unmarshal(b, &pe)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -88,8 +89,8 @@ func APIEventHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		e = pe
-	case TypePlayerLegislate:
-		pe := PlayerLegislateEvent{}
+	case sh.TypePlayerLegislate:
+		pe := sh.PlayerLegislateEvent{}
 		err = json.Unmarshal(b, &pe)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -97,8 +98,8 @@ func APIEventHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		e = pe
-	case TypePlayerInvestigate:
-		pe := PlayerPlayerEvent{}
+	case sh.TypePlayerInvestigate:
+		pe := sh.PlayerPlayerEvent{}
 		err = json.Unmarshal(b, &pe)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -106,8 +107,8 @@ func APIEventHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		e = pe
-	case TypePlayerSpecialElection:
-		pe := PlayerPlayerEvent{}
+	case sh.TypePlayerSpecialElection:
+		pe := sh.PlayerPlayerEvent{}
 		err = json.Unmarshal(b, &pe)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -115,8 +116,8 @@ func APIEventHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		e = pe
-	case TypePlayerExecute:
-		pe := PlayerPlayerEvent{}
+	case sh.TypePlayerExecute:
+		pe := sh.PlayerPlayerEvent{}
 		err = json.Unmarshal(b, &pe)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)

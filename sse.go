@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	sh "github.com/murphysean/secrethitler"
 	"net/http"
 	"time"
 )
@@ -36,17 +37,14 @@ func ServerSentEventsHandler(w http.ResponseWriter, r *http.Request) {
 	//r.Header.Get("Last-Event-Id")
 
 	//Subscribe to game events
-	myChan := make(chan Event)
+	myChan := make(chan sh.Event)
 	uid := GenUUIDv4()
-	theGame.m.Lock()
-	theGame.subscribers[uid] = myChan
-	theGame.m.Unlock()
+	//TODO add this channel to the subscriber list for the game
+	theGame.AddSubscriber(uid, myChan)
 
 	//Defer the removal of the chanel from the game on disconnect
 	defer func() {
-		theGame.m.Lock()
-		delete(theGame.subscribers, uid)
-		theGame.m.Unlock()
+		theGame.RemoveSubscriber(uid)
 	}()
 
 	//Loop on events coming out of the gameserver
@@ -61,7 +59,7 @@ func ServerSentEventsHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "event: %s\n", e.GetType())
 			//TODO Before sending an event, filter it for the auth'd user
 			fmt.Fprintf(w, "data: %s\n\n", b)
-		case <-time.After(time.Minute * 5):
+		case <-time.After(time.Minute):
 			fmt.Fprintf(w, ": keepalive\n\n")
 		case <-cnotchan:
 			return
@@ -69,8 +67,9 @@ func ServerSentEventsHandler(w http.ResponseWriter, r *http.Request) {
 		//Optionally also include a seperate event sending the whole state for the client to sync on
 		/*
 			fmt.Fprintln(w, "event: state")
-			//TODO Before sending the state, filter it for the auth'd user
-			b, err := json.Marshal(&theGame.Game)
+			//Before sending the state, filter it for the auth'd user
+			g := theGame.Game.Filter(r.Context())
+			b, err := json.Marshal(&g)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -79,5 +78,4 @@ func ServerSentEventsHandler(w http.ResponseWriter, r *http.Request) {
 		//Flush the data down the pipe
 		flusher.Flush()
 	}
-
 }
