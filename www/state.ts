@@ -39,15 +39,16 @@ class SSE {
   }
 }
 
-interface Player {
+export interface Player {
   id: string
   name: string
 }
 
-interface State {
+export interface State {
   currentPlayer: null | Player,
   players: Player[],
   state: '' | 'lobby' | 'init' | 'started' | 'finished'
+  initted: boolean
 }
 
 // global app state
@@ -55,7 +56,8 @@ export class AppState extends Container<State> {
   state: State = {
     currentPlayer: null,
     players: [],
-    state: ''
+    state: '',
+    initted: false
   };
   eventSource: SSE;
 
@@ -67,18 +69,18 @@ export class AppState extends Container<State> {
         players: [...this.state.players, data.player]
       });
     });
+
+    this.eventSource.listen<{}>(Events.TypeGameUpdate, (state) => {
+      this.setState({ ...this.state, ...state });
+    });
+
+    return this;
   }
 
   async fetchInitialState() {
     const initialState = await getInitialState();
-    if (initialState.players && initialState.players.length) {
-      this.setState({
-        players: this.state.players.concat(initialState.players)
-      });
-    }
-    if (initialState.state) {
-      this.setState({ state: initialState.state });
-    }
+    this.setState({ ...this.state, ...initialState, initted: true });
+    console.log(this.state);
     return this.state;
   }
 
@@ -89,11 +91,4 @@ export class AppState extends Container<State> {
   destroy() {
     this.eventSource.destroy();
   }
-}
-
-export const appState = new AppState();
-
-(window as any).getState = () => {
-  console.log(appState);
-  return appState;
 }

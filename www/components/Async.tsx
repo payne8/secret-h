@@ -2,15 +2,13 @@ import * as React from 'react';
 import { Spinner } from './Spinner';
 import { HTTPError } from '../api';
 
-type PromiseWithAbort = { promise: Promise<any>, abort(): void }
-
 export type AsyncStatus = 'PENDING' | 'COMPLETE' | 'REJECTED' | 'ERROR';
 
-interface Props {
-  load: () => Promise<any> | PromiseWithAbort
+interface Props<T = any> {
+  load: () => Promise<T>
   loader?: (state: State) => any
   error?: (state: State) => any
-  render: (data: any) => any
+  render: (data: T) => any
 }
 
 interface State {

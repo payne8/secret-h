@@ -1,20 +1,21 @@
 import * as React from 'react';
-import { joinPlayer, playerReady } from '../api';
-import { Link } from 'react-router-dom';
-import { appState } from '../state';
+import { joinPlayer } from '../api';
 
 export class Join extends React.Component<{ history: any }> {
   name: string = '';
+  player = {
+    id: '',
+    name: ''
+  };
 
   join = () => {
-    const player = {
+    this.player = {
       id: this.name.toLowerCase().trim().replace(/\s+/, ''),
       name: this.name
     };
-    joinPlayer(player.id, player.name)
-      .then(() => playerReady(player.id))
+
+    return joinPlayer(this.player.id, this.player.name)
       .then(() => {
-        appState.setCurrentPlayer(player);
         this.props.history.push('/game');
       })
       .catch(console.error);
@@ -27,10 +28,13 @@ export class Join extends React.Component<{ history: any }> {
   render() {
     return (
       <div>
-        <label>
-          Name <br />
-          <input type="text" name="firstName" onChange={this.onChange} />
-        </label>
+        <h1>Join</h1>
+        <div style={{ marginBottom: '1em' }}>
+          <label>
+            Name <br />
+            <input type="text" name="firstName" onChange={this.onChange} />
+          </label>
+        </div>
         <button onClick={this.join}>
           Join
         </button>

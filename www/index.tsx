@@ -1,29 +1,29 @@
-// The entry point
-
 import * as React from 'react';
 import { render } from 'react-dom';
 import { BrowserRouter, Route } from 'react-router-dom';
 
-import { Provider } from 'unstated';
-import { appState } from './state';
+import { Provider, Subscribe } from 'unstated';
+import { AppState } from './state';
 
 import { Lobby } from './routes/Lobby';
 import { Join } from './routes/Join';
 import { MainGame } from './routes/MainGame';
 
-class App extends React.Component {
+class App extends React.Component<{ appState: any }> {
   componentDidMount() {
-    appState.init(); // start listenting to SSE
+    this.props.appState
+      .init() // start listenting to SSE
+      .fetchInitialState();
   }
 
   // this is for HMR
   componentWillUnmount() {
-    appState.destroy();
+    this.props.appState.destroy();
   }
 
   render() {
     return (
-      <div>
+      <div style={{ maxWidth: 800, margin: '0 auto' }}>
         <Route exact path="/" component={Lobby} />
         <Route path="/join" render={({history}) => <Join history={history} />} />
         <Route path="/observe" component={() => <span>Not implemented yet</span>} />
@@ -35,12 +35,14 @@ class App extends React.Component {
 
 function AppContainer() {
   return (
-    <Provider
-      inject={[appState]}
-    >
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+    <Provider>
+      <Subscribe to={[AppState]}>
+      {(appState) => (
+        <BrowserRouter>
+          <App appState={appState} />
+        </BrowserRouter>
+      )}
+      </Subscribe>
     </Provider>
   );
 }

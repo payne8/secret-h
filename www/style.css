@@ -8,29 +8,37 @@
 }
 
 body {
+  --primaryColor: #363835;
+  --secondaryColor: #FBB969;
+  --mainFont: 'Futura', sans-serif;
+  --subFont: 'Courier New', Courier, monospace;
+
   margin: 0;
-  padding: 0;
-  background: #FBB969;
-  font-family: 'Courier New', Courier, monospace;
+  padding: 1em;
+  background: var(--primaryColor);
+  font-family: var(--mainFont);
   font-size: 18px;
   font-weight: 700;
   line-height: 25px;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Futura', sans-serif;
+  font-family: var(--mainFont);
   font-weight: bold;
   margin-top: 0;
 }
 
 button, .button {
-  background: #434343;
+  background: var(--secondaryColor);
   border: none;
   border-radius: 20px;
   break-inside: avoid;
-  color: #FBB969;
+  color: var(--primaryColor);
   display: block;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--mainFont);
+  text-transform: uppercase;
+  font-weight: 800;
   font-size: 18px;
   font-weight: 700;
   line-height: 25px;
@@ -49,15 +57,37 @@ button a, .button a {
 }
 
 a {
-  color: #434343;
+  color: var(--secondaryColor);
   font-weight: 700;
   text-decoration: underline;
   transition: color 60ms ease;
 }
 
 a:hover {
-  color: #968975;
+  color: var(--primaryColor);
   cursor: pointer;
+}
+
+img {
+  height: auto;
+  max-width: 100%;
+}
+
+input {
+  width: 100%;
+  padding: 0.5em;
+  font-size: 1rem;
+}
+
+.logo {
+  text-align: center;
+  margin: 0 0 2em 0;
+}
+
+.logo img {
+  display: block;
+  width: 250px;
+  margin: 0 auto;
 }
 
 .lobby {
