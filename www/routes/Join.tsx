@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { joinPlayer } from '../api';
+import { Header } from '../components/Header';
+import { appState } from '../state';
 
 export class Join extends React.Component<{ history: any }> {
   name: string = '';
@@ -10,12 +12,13 @@ export class Join extends React.Component<{ history: any }> {
 
   join = () => {
     this.player = {
-      id: this.name.toLowerCase().trim().replace(/\s+/, ''),
+      id: this.name.toLowerCase().replace(/\s+/, ''),
       name: this.name
     };
 
     return joinPlayer(this.player.id, this.player.name)
       .then(() => {
+        appState.setCurrentPlayer(this.player);
         this.props.history.push('/game');
       })
       .catch(console.error);
@@ -28,7 +31,7 @@ export class Join extends React.Component<{ history: any }> {
   render() {
     return (
       <div>
-        <h1>Join</h1>
+        <Header title="Join Game" />
         <div style={{ marginBottom: '1em' }}>
           <label>
             Name <br />

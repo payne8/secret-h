@@ -23,7 +23,7 @@ export class Lobby extends React.Component {
                     <div style={{ marginBottom: '2em', textAlign: 'center' }}>
                       {state.players.length} players joined
                     </div>
-                    <If condition={state.state === 'lobby'}>
+                    <If condition={state.state === ''}>
                       <Link className="button" to={`/join`}>
                         Join
                       </Link>

@@ -42,11 +42,13 @@ class SSE {
 export interface Player {
   id: string
   name: string
+  ready: boolean
 }
 
 export interface State {
-  currentPlayer: null | Player,
-  players: Player[],
+  currentPlayer: null | Player
+  currentPlayerReady: boolean
+  players: Player[]
   state: '' | 'lobby' | 'init' | 'started' | 'finished'
   initted: boolean
 }
@@ -55,6 +57,7 @@ export interface State {
 export class AppState extends Container<State> {
   state: State = {
     currentPlayer: null,
+    currentPlayerReady: false,
     players: [],
     state: '',
     initted: false
@@ -92,3 +95,7 @@ export class AppState extends Container<State> {
     this.eventSource.destroy();
   }
 }
+
+export const appState = new AppState();
+
+(window as any).getState = () => appState;

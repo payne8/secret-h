@@ -90,7 +90,39 @@ input {
   margin: 0 auto;
 }
 
-.lobby {
-
+.header-logo {
+  margin-bottom: 2em;
 }
 
+.header-logo > div {
+  display: flex;
+  align-items: center;
+}
+
+.header-logo h1, .header-logo h2 {
+  margin: 0;
+}
+
+.header-logo img {
+  width: 120px;
+  border-right: 1px solid #ffffff69;
+  margin-right: 1.5em;
+  padding-right: 1em;
+}
+
+.player-container {
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+}
+
+.player {
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 4px;
+  margin-right: 1em;
+  padding: 1em;
+}
+
+.player:last-child {
+  margin-right: 0;
+}

@@ -2,23 +2,23 @@ import * as React from 'react';
 import { render } from 'react-dom';
 import { BrowserRouter, Route } from 'react-router-dom';
 
-import { Provider, Subscribe } from 'unstated';
-import { AppState } from './state';
+import { Provider } from 'unstated';
+import { appState } from './state';
 
 import { Lobby } from './routes/Lobby';
 import { Join } from './routes/Join';
 import { MainGame } from './routes/MainGame';
 
-class App extends React.Component<{ appState: any }> {
+class App extends React.Component {
   componentDidMount() {
-    this.props.appState
+    appState
       .init() // start listenting to SSE
       .fetchInitialState();
   }
 
   // this is for HMR
   componentWillUnmount() {
-    this.props.appState.destroy();
+    appState.destroy();
   }
 
   render() {
@@ -35,14 +35,10 @@ class App extends React.Component<{ appState: any }> {
 
 function AppContainer() {
   return (
-    <Provider>
-      <Subscribe to={[AppState]}>
-      {(appState) => (
-        <BrowserRouter>
-          <App appState={appState} />
-        </BrowserRouter>
-      )}
-      </Subscribe>
+    <Provider inject={[appState]}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
     </Provider>
   );
 }
