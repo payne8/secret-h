@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	sh "github.com/murphysean/secrethitler"
@@ -24,6 +25,9 @@ func ServerSentEventsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cnotchan := cnot.CloseNotify()
+
+	//TODO Set this with the authenticated users playerID
+	ctx := context.WithValue(r.Context(), "playerID", "")
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Expose-Headers", "*")
@@ -65,16 +69,14 @@ func ServerSentEventsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		//Optionally also include a seperate event sending the whole state for the client to sync on
-		/*
-			fmt.Fprintln(w, "event: state")
-			//Before sending the state, filter it for the auth'd user
-			g := theGame.Game.Filter(r.Context())
-			b, err := json.Marshal(&g)
-			if err != nil {
-				fmt.Println(err)
-			}
-			fmt.Fprintf(w, "data: %s\n\n", b)
-		*/
+		fmt.Fprintln(w, "event: state")
+		//Before sending the state, filter it for the auth'd user
+		g := GameFromGame(theGame.Game.Filter(ctx))
+		b, err := json.Marshal(&g)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Fprintf(w, "data: %s\n\n", b)
 		//Flush the data down the pipe
 		flusher.Flush()
 	}

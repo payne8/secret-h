@@ -25,7 +25,7 @@ func main() {
 	http.HandleFunc("/api/event", APIEventHandler)
 	http.HandleFunc("/sse", ServerSentEventsHandler)
 	//A file handler for the static assets
-	http.Handle("/", http.FileServer(http.Dir("www")))
+	http.Handle("/", http.FileServer(http.Dir("www/dist")))
 
 	http.ListenAndServe(":8080", nil)
 }

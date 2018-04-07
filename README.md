@@ -8,6 +8,9 @@ Players can post up their votes, actions, etc via a single rest endpoint.
 Introduction
 ---
 
+This package depends on github.com/murphysean/secrethitler.
+Just run `go get -u` in your working directory to make sure you have the latest code.
+Then `go build` to create the binary.
 
 
 Posting Events
