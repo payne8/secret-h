@@ -101,16 +101,18 @@ type Vote struct {
 
 func APIStateHandler(w http.ResponseWriter, r *http.Request) {
 	//TODO Set this with the authenticated users playerID
-	ctx := context.WithValue(r.Context(), "playerID", "")
+	ctx := context.WithValue(r.Context(), "playerID", r.URL.Query().Get("playerID"))
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Expose-Headers", "*")
 	switch r.Method {
 	case http.MethodGet:
 		//Get the current game state
 		e := json.NewEncoder(w)
-		//TODO Filter it for the authenticated user
-		e.Encode(GameFromGame(theGame.Game))
+		//Filter it for the authenticated user
+		e.Encode(GameFromGame(theGame.Game.Filter(ctx)))
 	case http.MethodPut:
-		//TODO Only admins can do this
+		//Only admins can do this
 		g := sh.Game{}
 		d := json.NewDecoder(r.Body)
 		err := d.Decode(&g)
@@ -138,91 +140,15 @@ func APIStateHandler(w http.ResponseWriter, r *http.Request) {
 
 func APIEventHandler(w http.ResponseWriter, r *http.Request) {
 	//TODO Set this with the authenticated users playerID
-	ctx := context.WithValue(r.Context(), "playerID", "")
+	ctx := context.WithValue(r.Context(), "playerID", r.URL.Query().Get("playerID"))
 	//Read the whole body into a buffer (to be read twice)
 	b, err := ioutil.ReadAll(r.Body)
-	//First determine the type of event being posted
-	bt := sh.BaseEvent{}
-	err = json.Unmarshal(b, &bt)
+	e, err := sh.UnmarshalEvent(b)
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Expose-Headers", "*")
 	if err != nil {
 		http.Error(w, JsonErrorString(err.Error()), http.StatusBadRequest)
-		fmt.Println(err)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	//Second serialize it into that type of event object
-	var e sh.Event
-	//Set the playerID on the event from authenticated context
-	switch bt.GetType() {
-	case sh.TypePlayerJoin:
-		fallthrough
-	case sh.TypePlayerReady:
-		fallthrough
-	case sh.TypePlayerAcknowledge:
-		pe := sh.PlayerEvent{}
-		err = json.Unmarshal(b, &pe)
-		if err != nil {
-			http.Error(w, JsonErrorString(err.Error()), http.StatusBadRequest)
-			fmt.Println(err)
-			return
-		}
-		e = pe
-	case sh.TypePlayerVote:
-		pe := sh.PlayerVoteEvent{}
-		err = json.Unmarshal(b, &pe)
-		if err != nil {
-			http.Error(w, JsonErrorString(err.Error()), http.StatusBadRequest)
-			fmt.Println(err)
-			return
-		}
-		e = pe
-	case sh.TypePlayerNominate:
-		pe := sh.PlayerPlayerEvent{}
-		err = json.Unmarshal(b, &pe)
-		if err != nil {
-			http.Error(w, JsonErrorString(err.Error()), http.StatusBadRequest)
-			fmt.Println(err)
-			return
-		}
-		e = pe
-	case sh.TypePlayerLegislate:
-		pe := sh.PlayerLegislateEvent{}
-		err = json.Unmarshal(b, &pe)
-		if err != nil {
-			http.Error(w, JsonErrorString(err.Error()), http.StatusBadRequest)
-			fmt.Println(err)
-			return
-		}
-		e = pe
-	case sh.TypePlayerInvestigate:
-		pe := sh.PlayerPlayerEvent{}
-		err = json.Unmarshal(b, &pe)
-		if err != nil {
-			http.Error(w, JsonErrorString(err.Error()), http.StatusBadRequest)
-			fmt.Println(err)
-			return
-		}
-		e = pe
-	case sh.TypePlayerSpecialElection:
-		pe := sh.PlayerPlayerEvent{}
-		err = json.Unmarshal(b, &pe)
-		if err != nil {
-			http.Error(w, JsonErrorString(err.Error()), http.StatusBadRequest)
-			fmt.Println(err)
-			return
-		}
-		e = pe
-	case sh.TypePlayerExecute:
-		pe := sh.PlayerPlayerEvent{}
-		err = json.Unmarshal(b, &pe)
-		if err != nil {
-			http.Error(w, JsonErrorString(err.Error()), http.StatusBadRequest)
-			fmt.Println(err)
-			return
-		}
-		e = pe
-	default:
-		http.Error(w, JsonErrorString("Unrecognized Event Type"), http.StatusBadRequest)
 		fmt.Println(err)
 		return
 	}

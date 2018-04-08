@@ -9,17 +9,30 @@ import (
 )
 
 var theGame *sh.SecretHitler
+var theGameFile string
+
+type Writer struct {
+	Name string
+}
+
+func (w Writer) Write(b []byte) (int, error) {
+	f, err := os.OpenFile(w.Name, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0755)
+	if err != nil {
+		fmt.Println("write:", theGameFile, err)
+		return 0, err
+	}
+	defer f.Close()
+
+	return f.Write(b)
+}
 
 func main() {
 	//Specify a file to write all the events to
 	theGame = sh.NewSecretHitler()
-	var err error
-	theGame.Log, err = os.OpenFile("log.json", os.O_RDWR|os.O_CREATE, 0755)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	defer theGame.Log.Close()
+	var w Writer
+	theGameFile = GenUUIDv4() + ".json"
+	w.Name = theGameFile
+	theGame.Log = w
 
 	http.HandleFunc("/api/state", APIStateHandler)
 	http.HandleFunc("/api/event", APIEventHandler)

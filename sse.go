@@ -6,6 +6,8 @@ import (
 	"fmt"
 	sh "github.com/murphysean/secrethitler"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -25,9 +27,10 @@ func ServerSentEventsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cnotchan := cnot.CloseNotify()
+	myChan := make(chan sh.Event)
 
 	//TODO Set this with the authenticated users playerID
-	ctx := context.WithValue(r.Context(), "playerID", "")
+	ctx := context.WithValue(r.Context(), "playerID", r.URL.Query().Get("playerID"))
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Expose-Headers", "*")
@@ -37,13 +40,56 @@ func ServerSentEventsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, ": Getting Started\n\n")
 	flusher.Flush()
 
-	//TODO Stream events from the last event id specified
-	//r.Header.Get("Last-Event-Id")
+	leids := r.Header.Get("Last-Event-Id")
+	leid, err := strconv.Atoi(leids)
+	if err == nil {
+		if leid < theGame.Game.EventID {
+			//Stream events from the last event id specified
+			go func() {
+				f, err := os.OpenFile(theGameFile, os.O_RDONLY, 0644)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				err = sh.ReadEventLog(f, myChan)
+			}()
+			tg := sh.Game{}
+			for e := range myChan {
+				tg, _, err = tg.Apply(e)
+				if err != nil {
+					fmt.Println(err)
+				}
+				if e.GetID() <= leid {
+					continue
+				}
+				//TODO Don't filter if the real game is over
+				//Before sending an event, filter it for the auth'd user
+				e = e.Filter(ctx)
+				b, err := json.Marshal(&e)
+				if err != nil {
+					fmt.Println(err)
+				}
+				fmt.Fprintf(w, "id: %d\n", e.GetID())
+				fmt.Fprintf(w, "event: %s\n", e.GetType())
+				fmt.Fprintf(w, "data: %s\n\n", b)
+				fmt.Fprintln(w, "event: state")
+				//TODO Don't filter if the real game is over
+				g := GameFromGame(tg.Filter(ctx))
+				b, err = json.Marshal(&g)
+				if err != nil {
+					fmt.Println(err)
+				}
+				fmt.Fprintf(w, "data: %s\n\n", b)
+				//Flush the data down the pipe
+				flusher.Flush()
+			}
+		}
+	}
+	myChan = make(chan sh.Event)
 
 	//Subscribe to game events
-	myChan := make(chan sh.Event)
 	uid := GenUUIDv4()
-	//TODO add this channel to the subscriber list for the game
+	//Add this channel to the subscriber list for the game
 	theGame.AddSubscriber(uid, myChan)
 
 	//Defer the removal of the chanel from the game on disconnect
@@ -55,21 +101,29 @@ func ServerSentEventsHandler(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case e := <-myChan:
+			if e == nil {
+				flusher.Flush()
+				return
+			}
+			//TODO Don't filter if the real game is over
+			//Before sending an event, filter it for the auth'd user
+			e = e.Filter(ctx)
 			b, err := json.Marshal(&e)
 			if err != nil {
 				fmt.Println(err)
 			}
 			fmt.Fprintf(w, "id: %d\n", e.GetID())
 			fmt.Fprintf(w, "event: %s\n", e.GetType())
-			//TODO Before sending an event, filter it for the auth'd user
 			fmt.Fprintf(w, "data: %s\n\n", b)
 		case <-time.After(time.Minute):
 			fmt.Fprintf(w, ": keepalive\n\n")
 		case <-cnotchan:
+			flusher.Flush()
 			return
 		}
 		//Optionally also include a seperate event sending the whole state for the client to sync on
 		fmt.Fprintln(w, "event: state")
+		//TODO Don't filter if the real game is over
 		//Before sending the state, filter it for the auth'd user
 		g := GameFromGame(theGame.Game.Filter(ctx))
 		b, err := json.Marshal(&g)
