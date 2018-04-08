@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Provider, Subscribe, Container } from 'unstated';
-import { Events } from './types';
+import { Events, Party, Role } from './types';
 import { getInitialState } from './api';
 
 class SSE {
@@ -43,10 +43,12 @@ export interface Player {
   id: string
   name: string
   ready: boolean
+  party?: Party
+  role?: Role
 }
 
 export interface State {
-  currentPlayer: null | Player
+  currentPlayer: Player
   currentPlayerReady: boolean
   players: Player[]
   state: '' | 'lobby' | 'init' | 'started' | 'finished'
@@ -56,28 +58,47 @@ export interface State {
 // global app state
 export class AppState extends Container<State> {
   state: State = {
-    currentPlayer: null,
+    currentPlayer: { id: '1', name: 'Default', ready: false },
     currentPlayerReady: false,
     players: [],
     state: '',
     initted: false
   };
   eventSource: SSE;
+  router;
+
+  registerRouter(router) {
+    this.router = router;
+    return this;
+  }
 
   init() {
     this.eventSource = new SSE().init();
 
-    this.eventSource.listen<{ player: Player }>(Events.TypePlayerJoin, (data, event) => {
-      this.setState({
-        players: [...this.state.players, data.player]
-      });
+    this.eventSource.listen<any>(Events.TypeGameUpdate, (state) => {
+      console.log(`game update`, state);
+      this.setState({ ...this.state, ...state.game });
+      if(state.game.nextPresidentID === this.state.currentPlayer.id) {
+
+      }
     });
 
-    this.eventSource.listen<{}>(Events.TypeGameUpdate, (state) => {
-      this.setState({ ...this.state, ...state });
+    this.eventSource.listen<any>('state', (state) => {
+      console.log(`state`, state);
     });
 
     return this;
+  }
+
+  reset() {
+    this.setState({
+      currentPlayer: { id: '1', name: 'Default', ready: false },
+      currentPlayerReady: false,
+      players: [],
+      state: '',
+      initted: false
+    });
+    return this.fetchInitialState();
   }
 
   async fetchInitialState() {
@@ -89,6 +110,7 @@ export class AppState extends Container<State> {
 
   setCurrentPlayer(player: Player) {
     this.setState({ currentPlayer: player });
+    this.router.push('/game');
   }
 
   destroy() {

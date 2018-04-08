@@ -36,3 +36,14 @@ export enum Events {
 	TypeGameInformation = "game.information",
 	TypeGameUpdate = "game.update",
 }
+
+export enum Party {
+  facist = 'facist',
+  liberal = 'liberal'
+}
+
+export enum Role {
+  facist = 'facist',
+  liberal = 'liberal',
+  hitler = 'hitler'
+}

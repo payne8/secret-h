@@ -3,23 +3,19 @@ import { joinPlayer } from '../api';
 import { Header } from '../components/Header';
 import { appState } from '../state';
 
-export class Join extends React.Component<{ history: any }> {
+export class Join extends React.Component {
   name: string = '';
-  player = {
-    id: '',
-    name: ''
-  };
 
   join = () => {
-    this.player = {
+    const player = {
       id: this.name.toLowerCase().replace(/\s+/, ''),
-      name: this.name
+      name: this.name,
+      ready: false
     };
 
-    return joinPlayer(this.player.id, this.player.name)
+    return joinPlayer(player.id, player.name)
       .then(() => {
-        appState.setCurrentPlayer(this.player);
-        this.props.history.push('/game');
+        appState.setCurrentPlayer(player);
       })
       .catch(console.error);
   }

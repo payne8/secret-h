@@ -35,7 +35,7 @@ export class MainGame extends React.Component {
             </div>
 
             <div className="player-container">
-              {state.players.map(p => (
+              {state.players.filter(p => p.id !== state.currentPlayer.id).map(p => (
                 <Player key={p.id} name={p.name} id={p.id} />
               ))}
             </div>
