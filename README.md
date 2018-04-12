@@ -14,6 +14,13 @@ Then `go build` to create the binary.
 A note on authentication, for now we are allowing you to specify your user as a query parameter to accelerate development.
 Just append ?playerID=$PLAYERID to any of the urls below to authenticate as that player for that request.
 
+Building
+---
+
+Using docker you can build and run your app
+
+	docker run -it --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp -e GIT_TERMINAL_PROMPT=1 -e GOOS=darwin -e GOARCH=amd64 golang sh -c "git clone git://github.com/murphysean/secrethitler.git /go/src/github.com/murphysean/secrethitler; go build -v"
+
 Creating a Player
 ---
 
