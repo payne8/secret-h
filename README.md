@@ -11,6 +11,38 @@ Introduction
 This package depends on github.com/murphysean/secrethitler.
 Just run `go get -u` in your working directory to make sure you have the latest code.
 Then `go build` to create the binary.
+A note on authentication, for now we are allowing you to specify your user as a query parameter to accelerate development.
+Just append ?playerID=$PLAYERID to any of the urls below to authenticate as that player for that request.
+
+Creating a Player
+---
+
+	curl http://localhost:8080/api/players/ -H "Content-Type: application/json" -d '{"email":"murphysean84@gmail.com,"password":"abc123"}'
+	{"id":"66543097","email":"murphysean84@gmail.com","username":"murphysean","name":"Sean Murphy","thumbnailUrl":"https://secure.gravatar.com/avatar/12c969a7728fe1bc2fb19c8627af81c9"}
+
+Getting a Player
+---
+
+	curl http://localhost:8080/api/players/$PLAYERID
+	{"id":"66543097","email":"murphysean84@gmail.com","username":"murphysean","name":"Sean Murphy","thumbnailUrl":"https://secure.gravatar.com/avatar/12c969a7728fe1bc2fb19c8627af81c9"}
+
+Creating a Game
+---
+
+	curl http://localhost:8080/api/games/ -H "Content-Type: application/json" -X POST
+	{"id":"3a37480d-5f65-433c-8f0d-82a3af1f5b59","eventID":1,"state":"","draw":[],"discard":[],"liberal":0,"facist":0,"failedVotes":0,"players":[],"round":{"id":0,"presidentID":"","chancellorID":"","state":"","votes":[],"policies":null,"enactedPolicy":"","executiveAction":""},"nextPresidentID":"","previousPresidentID":"","previousChancellorID":"","specialElectionRoundID":0,"specialElectionPresidentID":"","winningParty":""}
+
+Listing Games
+---
+
+	curl http://localhost:8080/api/games/
+	[{"id":"3a37480d-5f65-433c-8f0d-82a3af1f5b59","state":"","players":0}]
+
+Getting a Game
+---
+
+	curl http://localhost:8080/api/games/$GAMEID
+	{"id":"3a37480d-5f65-433c-8f0d-82a3af1f5b59","eventID":1,"state":"","draw":[],"discard":[],"liberal":0,"facist":0,"failedVotes":0,"players":[],"round":{"id":0,"presidentID":"","chancellorID":"","state":"","votes":[],"policies":null,"enactedPolicy":"","executiveAction":""},"nextPresidentID":"","previousPresidentID":"","previousChancellorID":"","specialElectionRoundID":0,"specialElectionPresidentID":"","winningParty":""}
 
 
 Posting Events
@@ -18,14 +50,15 @@ Posting Events
 
 Each authenticated player can post events via the rest api
 
-	curl http://localhost:8080/api/event -H "Content-Type: application/json" -d '{"type":"player.join","player":{"name":"Player A","id":"a"}}'
+	curl http://localhost:8080/api/games/$GAMEID/events/ -H "Content-Type: application/json" -d '{"type":"player.join","player":{"id":"a"}}'
+	{"id":0,"type":"player.join","moment":"2018-04-11T20:51:45.625893491-06:00","player":{"id":"a","lastReaction":"0001-01-01T00:00:00Z"}}
 
 Subscribing to the event stream
 ---
 
 Anyone can subscribe to the event stream:
 
-	curl http://localhost:8080/sse?includeState=true
+	curl http://localhost:8080/api/games/$GAMEID/events?includeState=true
 
 If the query parameter includeState is set to true, the server will also include the current filtered game state for each event
 
