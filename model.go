@@ -25,7 +25,7 @@ func GameFromGame(g sh.Game) Game {
 			Ack:            p.Ack,
 			ExecutedBy:     p.ExecutedBy,
 			InvestigatedBy: p.InvestigatedBy,
-			LastReaction:   p.LastReaction,
+			LastAction:     p.LastAction,
 		}
 		ret.Players = append(ret.Players, np)
 	}
@@ -78,7 +78,7 @@ type GamePlayer struct {
 	Ack            bool      `json:"ack"`
 	ExecutedBy     string    `json:"executedBy"`
 	InvestigatedBy string    `json:"investigatedBy"`
-	LastReaction   time.Time `json:"lastReaction"`
+	LastAction     time.Time `json:"lastAction"`
 }
 
 type Round struct {
