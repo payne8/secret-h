@@ -11,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -191,7 +192,7 @@ func (ah APIHandler) GetGameEventsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	//TODO If the game isn't in the active games list, it still might be a log file...
+	//If the game isn't in the active games list, it still might be a log file...
 	ah.m.RLock()
 	ret, ok := ah.ActiveGames[rer[1]]
 	ah.m.RUnlock()
@@ -222,13 +223,19 @@ func (ah APIHandler) GetGameEventsHandler(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, ": Getting Started\n\n")
 	flusher.Flush()
+	var err error
 
 	myChan := make(chan sh.Event)
 	leids := r.Header.Get("Last-Event-Id")
 	leid, _ := strconv.Atoi(leids)
 	geid := 0
+	over := true
 	if ret != nil {
 		geid = ret.Game.EventID
+		if ret.Game.WinningParty == "" {
+			over = false
+		}
+
 	}
 	if geid == 0 || leid < geid {
 		//Stream events from the last event id specified
@@ -245,16 +252,18 @@ func (ah APIHandler) GetGameEventsHandler(w http.ResponseWriter, r *http.Request
 		}()
 		tg := sh.Game{}
 		for e := range myChan {
-			tg, _, err := tg.Apply(e)
+			tg, _, err = tg.Apply(e)
 			if err != nil {
 				fmt.Println(err)
 			}
 			if leid > 0 && e.GetID() <= leid {
 				continue
 			}
-			//TODO Don't filter if the real game is over
-			//Before sending an event, filter it for the auth'd user
-			e = e.Filter(r.Context())
+			//Don't filter if the real game is over
+			if !over {
+				//Before sending an event, filter it for the auth'd user
+				e = e.Filter(r.Context())
+			}
 			b, err := json.Marshal(&e)
 			if err != nil {
 				fmt.Println(err)
@@ -262,15 +271,25 @@ func (ah APIHandler) GetGameEventsHandler(w http.ResponseWriter, r *http.Request
 			fmt.Fprintf(w, "id: %d\n", e.GetID())
 			fmt.Fprintf(w, "event: %s\n", e.GetType())
 			fmt.Fprintf(w, "data: %s\n\n", b)
-			fmt.Fprintln(w, "event: state")
-			//TODO Don't filter if the real game is over
-			g := GameFromGame(tg.Filter(r.Context()))
-			b, err = json.Marshal(&g)
-			if err != nil {
-				fmt.Println(err)
+			//Only send state on mutating events
+			if !strings.HasPrefix(e.GetType(), "request") &&
+				!strings.HasPrefix(e.GetType(), "react") &&
+				e.GetType() != sh.TypePlayerMessage &&
+				e.GetType() != sh.TypeGuess {
+
+				fmt.Fprintln(w, "event: state")
+				g := GameFromGame(tg)
+				//Only filter if the real game is not over
+				if !over {
+					g = GameFromGame(tg.Filter(r.Context()))
+				}
+				b, err = json.Marshal(&g)
+				if err != nil {
+					fmt.Println(err)
+				}
+				fmt.Fprintf(w, "data: %s\n\n", b)
+				//Flush the data down the pipe
 			}
-			fmt.Fprintf(w, "data: %s\n\n", b)
-			//Flush the data down the pipe
 			flusher.Flush()
 		}
 	}
@@ -300,7 +319,6 @@ func (ah APIHandler) GetGameEventsHandler(w http.ResponseWriter, r *http.Request
 				flusher.Flush()
 				return
 			}
-			//TODO Don't filter if the real game is over
 			//Before sending an event, filter it for the auth'd user
 			e = e.Filter(r.Context())
 			b, err := json.Marshal(&e)
@@ -310,22 +328,24 @@ func (ah APIHandler) GetGameEventsHandler(w http.ResponseWriter, r *http.Request
 			fmt.Fprintf(w, "id: %d\n", e.GetID())
 			fmt.Fprintf(w, "event: %s\n", e.GetType())
 			fmt.Fprintf(w, "data: %s\n\n", b)
+
+			if !strings.HasPrefix(e.GetType(), "request") &&
+				!strings.HasPrefix(e.GetType(), "react") &&
+				e.GetType() != sh.TypePlayerMessage &&
+				e.GetType() != sh.TypeGuess {
+				//Optionally also include a seperate event sending the whole state for the client to sync on
+				fmt.Fprintln(w, "event: state")
+				//Before sending the state, filter it for the auth'd user
+				g := GameFromGame(ret.Game.Filter(r.Context()))
+				b, _ := json.Marshal(&g)
+				fmt.Fprintf(w, "data: %s\n\n", b)
+			}
 		case <-time.After(time.Minute):
 			fmt.Fprintf(w, ": keepalive\n\n")
 		case <-cnotchan:
 			flusher.Flush()
 			return
 		}
-		//Optionally also include a seperate event sending the whole state for the client to sync on
-		fmt.Fprintln(w, "event: state")
-		//TODO Don't filter if the real game is over
-		//Before sending the state, filter it for the auth'd user
-		g := GameFromGame(ret.Game.Filter(r.Context()))
-		b, err := json.Marshal(&g)
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Fprintf(w, "data: %s\n\n", b)
 		//Flush the data down the pipe
 		flusher.Flush()
 	}
