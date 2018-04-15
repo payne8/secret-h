@@ -43,7 +43,9 @@ func GameFromGame(g sh.Game) Game {
 	ret.Round.EnactedPolicy = g.Round.EnactedPolicy
 	ret.Round.ExecutiveAction = g.Round.ExecutiveAction
 	ret.NextPresidentID = g.NextPresidentID
+	ret.PreviousPresidentID = g.PreviousPresidentID
 	ret.PreviousChancellorID = g.PreviousChancellorID
+	ret.PreviousEnactedPolicy = g.PreviousEnactedPolicy
 	ret.SpecialElectionRoundID = g.SpecialElectionRoundID
 	ret.SpecialElectionPresidentID = g.SpecialElectionPresidentID
 	ret.WinningParty = g.WinningParty
@@ -65,6 +67,7 @@ type Game struct {
 	NextPresidentID            string       `json:"nextPresidentID"`
 	PreviousPresidentID        string       `json:"previousPresidentID"`
 	PreviousChancellorID       string       `json:"previousChancellorID"`
+	PreviousEnactedPolicy      string       `json:"previousEnactedPolicy"`
 	SpecialElectionRoundID     int          `json:"specialElectionRoundID"`
 	SpecialElectionPresidentID string       `json:"specialElectionPresidentID"`
 	WinningParty               string       `json:"winningParty"`
