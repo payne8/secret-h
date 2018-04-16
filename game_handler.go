@@ -184,6 +184,28 @@ func (ah APIHandler) CreateGameEventHandler(w http.ResponseWriter, r *http.Reque
 	enc.Encode(&e)
 }
 
+func shouldSendState(t string) bool {
+	if strings.HasPrefix(t, "request.") {
+		return false
+	}
+	if strings.HasPrefix(t, "react.") {
+		return false
+	}
+	if t == sh.TypeGameInformation {
+		return false
+	}
+	if t == sh.TypePlayerVote {
+		return false
+	}
+	if t == sh.TypePlayerMessage {
+		return false
+	}
+	if t == sh.TypeGuess {
+		return false
+	}
+	return true
+}
+
 func (ah APIHandler) GetGameEventsHandler(w http.ResponseWriter, r *http.Request) {
 	// https://www.html5rocks.com/en/tutorials/eventsource/basics/
 	rer := gre.FindStringSubmatch(r.URL.Path)
@@ -272,12 +294,8 @@ func (ah APIHandler) GetGameEventsHandler(w http.ResponseWriter, r *http.Request
 			fmt.Fprintf(w, "event: %s\n", e.GetType())
 			fmt.Fprintf(w, "data: %s\n\n", b)
 			//Only send state on mutating events
-			if !strings.HasPrefix(e.GetType(), "request") &&
-				!strings.HasPrefix(e.GetType(), "react") &&
-				e.GetType() != sh.TypePlayerMessage &&
-				e.GetType() != sh.TypeGuess {
-
-				fmt.Fprintln(w, "event: state")
+			if shouldSendState(e.GetType()) {
+				fmt.Fprintf(w, "event: %s\n", "state")
 				g := GameFromGame(tg)
 				//Only filter if the real game is not over
 				if !over {
@@ -329,12 +347,9 @@ func (ah APIHandler) GetGameEventsHandler(w http.ResponseWriter, r *http.Request
 			fmt.Fprintf(w, "event: %s\n", e.GetType())
 			fmt.Fprintf(w, "data: %s\n\n", b)
 
-			if !strings.HasPrefix(e.GetType(), "request") &&
-				!strings.HasPrefix(e.GetType(), "react") &&
-				e.GetType() != sh.TypePlayerMessage &&
-				e.GetType() != sh.TypeGuess {
+			if shouldSendState(e.GetType()) {
 				//Optionally also include a seperate event sending the whole state for the client to sync on
-				fmt.Fprintln(w, "event: state")
+				fmt.Fprintf(w, "event: %s\n", "state")
 				//Before sending the state, filter it for the auth'd user
 				g := GameFromGame(ret.Game.Filter(r.Context()))
 				b, _ := json.Marshal(&g)
