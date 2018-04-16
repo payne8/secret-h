@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	sh "github.com/murphysean/secrethitler"
 	tb "github.com/nsf/termbox-go"
@@ -51,6 +52,8 @@ func main() {
 	states := []sh.Game{}
 
 	var myEvent sh.Event
+	var myAssert sh.AssertEvent
+	myAssert.PlayerID = ctx.Value("playerID").(string)
 
 	ec, sc, err := openSSE(ctx)
 	if err != nil {
@@ -73,13 +76,33 @@ func main() {
 				re := e.(sh.RequestEvent)
 				if re.PlayerID == ctx.Value("playerID").(string) {
 					myEvent = e
+					myAssert.Type = sh.TypeAssertPolicies
+					myAssert.RoundID = re.RoundID
+					myAssert.Policies = re.Policies
+					myAssert.Token = re.Token
 				}
 			case sh.TypeRequestExecutiveAction:
 				re := e.(sh.RequestEvent)
 				if re.PlayerID == ctx.Value("playerID").(string) {
 					myEvent = e
 				}
+			case sh.TypeGameInformation:
+				ie := e.(sh.InformationEvent)
+				if ie.PlayerID == ctx.Value("playerID").(string) {
+					if ie.Party != "" {
+						myAssert.Type = sh.TypeAssertParty
+						myAssert.OtherPlayerID = ie.OtherPlayerID
+						myAssert.Party = ie.Party
+					}
+					if len(ie.Policies) > 0 {
+						myAssert.Type = sh.TypeAssertPolicies
+						myAssert.Policies = ie.Policies
+					}
+					myAssert.RoundID = ie.RoundID
+					myAssert.Token = ie.Token
+				}
 			}
+			tb.Interrupt()
 		}
 	}()
 	go func() {
@@ -142,156 +165,46 @@ func main() {
 				}
 			default:
 				var se sh.Event
-				if myEvent != nil && len(states) > 0 {
+				if len(states) > 0 && myEvent != nil {
 					switch ev.Ch {
-					case '0':
+					case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+						idx := 0
+						switch ev.Ch {
+						case '1':
+							idx = 1
+						case '2':
+							idx = 2
+						case '3':
+							idx = 3
+						case '4':
+							idx = 4
+						case '5':
+							idx = 5
+						case '6':
+							idx = 6
+						case '7':
+							idx = 7
+						case '8':
+							idx = 8
+						case '9':
+							idx = 9
+						}
+						if idx >= len(states[len(states)-1].Players) {
+							idx = len(states[len(states)-1].Players) - 1
+						}
+
 						if myEvent.GetType() == sh.TypeRequestNominate {
 							se = sh.PlayerPlayerEvent{
 								BaseEvent:     sh.BaseEvent{Type: sh.TypePlayerNominate},
 								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[0].ID,
+								OtherPlayerID: states[len(states)-1].Players[idx].ID,
 							}
 						}
 						if myEvent.GetType() == sh.TypeRequestExecutiveAction {
 							se = sh.PlayerPlayerEvent{
 								BaseEvent:     sh.BaseEvent{Type: "player." + myEvent.(sh.RequestEvent).ExecutiveAction},
 								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[0].ID,
-							}
-						}
-					case '1':
-						if myEvent.GetType() == sh.TypeRequestNominate {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: sh.TypePlayerNominate},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[1].ID,
-							}
-						}
-						if myEvent.GetType() == sh.TypeRequestExecutiveAction {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: "player." + myEvent.(sh.RequestEvent).ExecutiveAction},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[1].ID,
-							}
-						}
-					case '2':
-						if myEvent.GetType() == sh.TypeRequestNominate {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: sh.TypePlayerNominate},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[2].ID,
-							}
-						}
-						if myEvent.GetType() == sh.TypeRequestExecutiveAction {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: "player." + myEvent.(sh.RequestEvent).ExecutiveAction},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[2].ID,
-							}
-						}
-					case '3':
-						if myEvent.GetType() == sh.TypeRequestNominate {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: sh.TypePlayerNominate},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[3].ID,
-							}
-						}
-						if myEvent.GetType() == sh.TypeRequestExecutiveAction {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: "player." + myEvent.(sh.RequestEvent).ExecutiveAction},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[3].ID,
-							}
-						}
-					case '4':
-						if myEvent.GetType() == sh.TypeRequestNominate {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: sh.TypePlayerNominate},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[4].ID,
-							}
-						}
-						if myEvent.GetType() == sh.TypeRequestExecutiveAction {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: "player." + myEvent.(sh.RequestEvent).ExecutiveAction},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[4].ID,
-							}
-						}
-					case '5':
-						if myEvent.GetType() == sh.TypeRequestNominate {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: sh.TypePlayerNominate},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[5].ID,
-							}
-						}
-						if myEvent.GetType() == sh.TypeRequestExecutiveAction {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: "player." + myEvent.(sh.RequestEvent).ExecutiveAction},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[5].ID,
-							}
-						}
-					case '6':
-						if myEvent.GetType() == sh.TypeRequestNominate {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: sh.TypePlayerNominate},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[6].ID,
-							}
-						}
-						if myEvent.GetType() == sh.TypeRequestExecutiveAction {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: "player." + myEvent.(sh.RequestEvent).ExecutiveAction},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[6].ID,
-							}
-						}
-					case '7':
-						if myEvent.GetType() == sh.TypeRequestNominate {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: sh.TypePlayerNominate},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[7].ID,
-							}
-						}
-						if myEvent.GetType() == sh.TypeRequestExecutiveAction {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: "player." + myEvent.(sh.RequestEvent).ExecutiveAction},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[7].ID,
-							}
-						}
-					case '8':
-						if myEvent.GetType() == sh.TypeRequestNominate {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: sh.TypePlayerNominate},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[8].ID,
-							}
-						}
-						if myEvent.GetType() == sh.TypeRequestExecutiveAction {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: "player." + myEvent.(sh.RequestEvent).ExecutiveAction},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[8].ID,
-							}
-						}
-					case '9':
-						if myEvent.GetType() == sh.TypeRequestNominate {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: sh.TypePlayerNominate},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[9].ID,
-							}
-						}
-						if myEvent.GetType() == sh.TypeRequestExecutiveAction {
-							se = sh.PlayerPlayerEvent{
-								BaseEvent:     sh.BaseEvent{Type: "player." + myEvent.(sh.RequestEvent).ExecutiveAction},
-								PlayerID:      ctx.Value("playerID").(string),
-								OtherPlayerID: states[len(states)-1].Players[9].ID,
+								OtherPlayerID: states[len(states)-1].Players[idx].ID,
 							}
 						}
 					case 'y':
@@ -310,7 +223,6 @@ func main() {
 								Vote:      false,
 							}
 						}
-
 					case 'l':
 						se = sh.PlayerLegislateEvent{
 							BaseEvent: sh.BaseEvent{Type: sh.TypePlayerLegislate},
@@ -325,7 +237,58 @@ func main() {
 						}
 					}
 					if se != nil {
-						sendEvent(ctx, se)
+						err = sendEvent(ctx, se)
+						if err == nil {
+							myEvent = nil
+						}
+					}
+				} else if len(states) > 0 && myAssert.Type != "" {
+					switch ev.Ch {
+					case '0':
+						if myAssert.Type == sh.TypeAssertPolicies {
+							for i, _ := range myAssert.Policies {
+								myAssert.Policies[i] = sh.PolicyFacist
+							}
+						}
+					case '1':
+						if myAssert.Type == sh.TypeAssertPolicies {
+							for i, _ := range myAssert.Policies {
+								myAssert.Policies[i] = sh.PolicyFacist
+							}
+							myAssert.Policies[0] = sh.PolicyLiberal
+						}
+					case '2':
+						if myAssert.Type == sh.TypeAssertPolicies {
+							for i, _ := range myAssert.Policies {
+								myAssert.Policies[i] = sh.PolicyLiberal
+							}
+							if len(myAssert.Policies) > 2 {
+								myAssert.Policies[0] = sh.PolicyFacist
+							}
+						}
+					case '3':
+						if myAssert.Type == sh.TypeAssertPolicies {
+							for i, _ := range myAssert.Policies {
+								myAssert.Policies[i] = sh.PolicyLiberal
+							}
+						}
+					case 'l':
+						if myAssert.Type == sh.TypeAssertParty {
+							myAssert.Party = sh.PartyLiberal
+						}
+					case 'f':
+						if myAssert.Type == sh.TypeAssertParty {
+							myAssert.Party = sh.PartyFacist
+						}
+					}
+					err = sendEvent(ctx, myAssert)
+					if err == nil {
+						myAssert.Type = ""
+						myAssert.OtherPlayerID = ""
+						myAssert.Party = ""
+						myAssert.Token = ""
+						myAssert.RoundID = 0
+						myAssert.Policies = []string{}
 					}
 				}
 			}
@@ -336,7 +299,7 @@ func main() {
 		if len(states) > 0 {
 			drawPlayers(states[currIdx])
 			drawGameBoard(states[currIdx])
-			drawEventPrompt(myEvent)
+			drawEventPrompt(states[currIdx], myEvent, myAssert)
 		}
 		tb.Flush()
 	}
@@ -346,22 +309,36 @@ func getNameForID(id string) string {
 	return id
 }
 
-func drawEventPrompt(e sh.Event) {
+func drawEventPrompt(g sh.Game, e sh.Event, ae sh.AssertEvent) {
 	if e == nil {
+		switch ae.GetType() {
+		case sh.TypeAssertPolicies:
+			drawStringAt("Tell others how many liberal policies you saw (0-3):", 0, 10, tb.ColorDefault, tb.ColorDefault)
+		case sh.TypeAssertParty:
+			drawStringAt("Tell others what party you investigated (l/f):", 0, 10, tb.ColorDefault, tb.ColorDefault)
+		}
 		return
 	}
 	switch e.GetType() {
 	case sh.TypeRequestAcknowledge:
 		drawStringAt("Ctrl-A to acknowledge your party/role:", 0, 10, tb.ColorDefault, tb.ColorDefault)
 	case sh.TypeRequestNominate:
-		drawStringAt("Choose another player as chancellor (0-9):", 0, 10, tb.ColorDefault, tb.ColorDefault)
+		if g.Round.State == sh.RoundStateNominating {
+			drawStringAt("Choose another player as chancellor (0-9):", 0, 10, tb.ColorDefault, tb.ColorDefault)
+		}
 	case sh.TypeRequestVote:
-		drawStringAt("Vote y/n on president/chancellor:", 0, 10, tb.ColorDefault, tb.ColorDefault)
+		if g.Round.State == sh.RoundStateVoting {
+			drawStringAt("Vote y/n on president/chancellor:", 0, 10, tb.ColorDefault, tb.ColorDefault)
+		}
 	case sh.TypeRequestLegislate:
-		drawStringAt("Choose a policy to discard(l/f):", 0, 10, tb.ColorDefault, tb.ColorDefault)
+		if g.Round.State == sh.RoundStateLegislating {
+			drawStringAt("Choose a policy to discard(l/f):", 0, 10, tb.ColorDefault, tb.ColorDefault)
+		}
 	case sh.TypeRequestExecutiveAction:
-		eae := e.(sh.RequestEvent)
-		drawStringAt("Choose another player to "+eae.ExecutiveAction+" (0-9):", 0, 10, tb.ColorDefault, tb.ColorDefault)
+		if g.Round.State == sh.RoundStateExecutiveAction {
+			eae := e.(sh.RequestEvent)
+			drawStringAt("Choose another player to "+eae.ExecutiveAction+" (0-9):", 0, 10, tb.ColorDefault, tb.ColorDefault)
+		}
 	}
 }
 
@@ -598,6 +575,9 @@ func sendEvent(ctx context.Context, e sh.Event) error {
 		return err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusAccepted {
+		return errors.New("status code " + resp.Status)
+	}
 
 	return nil
 }
