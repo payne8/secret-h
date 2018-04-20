@@ -19,7 +19,18 @@ Building
 
 Using docker you can build and run your app
 
+Build binary for mac:
+
 	docker run -it --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp -e GIT_TERMINAL_PROMPT=1 -e GOOS=darwin -e GOARCH=amd64 golang sh -c "git clone git://github.com/murphysean/secrethitler.git /go/src/github.com/murphysean/secrethitler; go build -v"
+	./myapp
+
+Build a docker image:
+
+	docker build -t secret-h:1.0 .
+
+Run the docker image:
+
+	docker run -it --rm -p 8080:8080 --name my-running-secret-h secret-h:1.0
 
 Creating a Player
 ---
