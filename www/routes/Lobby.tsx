@@ -20,16 +20,13 @@ export class Lobby extends React.Component {
                 </If>
                 <If condition={state.initted}>
                   <>
-                    <div style={{ marginBottom: '2em', textAlign: 'center' }}>
-                      {state.players.length} players joined
-                    </div>
                     <If condition={state.state === ''}>
                       <Link className="button" to={`/join`}>
                         Join
                       </Link>
                     </If>
                     <If condition={state.state !== 'lobby'}>
-                      <Link className="button" to={`/observe`}>
+                      <Link className="button secondary" to={`/observe`}>
                         Observe
                       </Link>
                     </If>

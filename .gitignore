@@ -20,3 +20,5 @@ secret-h
 www/node_modules
 www/dist
 www/.cache
+
+myapp

@@ -13,7 +13,6 @@ class _App extends React.Component<{ history: any }> {
   componentDidMount() {
     appState
       .registerRouter(this.props.history)
-      .init() // start listenting to SSE
       .fetchInitialState();
   }
 

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Provider, Subscribe, Container } from 'unstated';
 import { Events, Party, Role } from './types';
-import { getInitialState } from './api';
+import { getGames } from './api';
 
 class SSE {
   private source: EventSource;
@@ -102,10 +102,14 @@ export class AppState extends Container<State> {
   }
 
   async fetchInitialState() {
-    const initialState = await getInitialState();
-    this.setState({ ...this.state, ...initialState, initted: true });
-    console.log(this.state);
-    return this.state;
+    const games = await getGames();
+    let stateUpdate: Partial<State> = {};
+    if (games && games.length > 0) {
+      stateUpdate.state = games[0].state;
+    }
+    stateUpdate.initted = true;
+    this.setState(stateUpdate);
+    return this;
   }
 
   setCurrentPlayer(player: Player) {

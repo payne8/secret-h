@@ -48,8 +48,8 @@ export function postEvent(eventType: Events, payload: object) {
   });
 }
 
-export function getInitialState() {
-  return fetchJSON('/api/state');
+export function getGames() {
+  return fetchJSON('/api/games');
 }
 
 export function joinPlayer(id: string, name: string) {

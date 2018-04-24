@@ -37,7 +37,6 @@ button, .button {
   color: var(--primaryColor);
   display: block;
   font-family: var(--mainFont);
-  text-transform: uppercase;
   font-weight: 800;
   font-size: 18px;
   font-weight: 700;
@@ -49,6 +48,12 @@ button, .button {
   text-decoration: none;
   cursor: pointer;
   outline: none;
+}
+
+button.secondary,
+.button.secondary {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 button a, .button a {

@@ -11,7 +11,7 @@ let secretHServer;
 
 function startSecretHServer() {
   console.log('starting secret-h');
-  secretHServer = spawn('../secret-h', []);
+  secretHServer = spawn('../myapp', []);
   secretHServer.stdout.on('data', out => console.log(out.toString()));
   secretHServer.stderr.on('data', out => console.error(out.toString()));
   secretHServer.on('close', console.log);
@@ -22,6 +22,7 @@ startSecretHServer();
 app.use(
   '/api',
   proxy({
+    logLevel: 'info',
     target: 'http://localhost:8080'
   })
 );
