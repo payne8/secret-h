@@ -26,7 +26,8 @@ export function fetchJSON(input: RequestInfo, init: RequestInit = {}) {
     headers: {
       ...init.headers,
       'Content-Type': 'application/json'
-    }
+    },
+    credentials: 'same-origin'
   })
   .then(res => {
     if (res.ok) {
@@ -38,8 +39,8 @@ export function fetchJSON(input: RequestInfo, init: RequestInit = {}) {
   .then(res => res.json().catch(err => ''));
 }
 
-export function postEvent(eventType: Events, payload: object) {
-  return fetchJSON(`api/event`, {
+export function postEvent(gameId: string, playerId: string, eventType: Events, payload: object) {
+  return fetchJSON(`api/games/${gameId}/events?playerId=${playerId}`, {
     method: 'POST',
     body: JSON.stringify({
       type: eventType,
@@ -52,50 +53,22 @@ export function getGames() {
   return fetchJSON('/api/games');
 }
 
-export function joinPlayer(id: string, name: string) {
-  return postEvent(Events.TypePlayerJoin, {
-    player: {
-      id,
-      name
-    }
-  });
+export function getGame(id: string) {
+  return fetchJSON(`/api/games/${id}`);
 }
 
-export function playerReady(id: string) {
-  return postEvent(Events.TypePlayerReady, {
-    player: {
-      id,
-      ready: true
-    }
-  });
+export function createGame() {
+  return fetchJSON('/api/games', { method: 'POST' });
 }
 
-export function playerAcknowledge(id: string, party: Party, role: Role) {
-  return postEvent(Events.TypePlayerAcknowledge, {
-    player: {
-      id,
-      acknowledge: true,
-      party,
-      role
-    }
-  });
-}
-
-export function playerNominate(id: string, otherPlayerId: string) {
-  return postEvent(Events.TypePlayerNominate, {
-    player: {
-      playerID: id,
-      otherPlayerID: otherPlayerId
-    }
-  });
-}
-
-export function playerVote(id: string, vote: string) {
-  return postEvent(Events.TypePlayerVote, {
-    vote: {
-      playerID: id,
-      vote
-    }
+export function createPlayer(player: { email: string, password: string }) {
+  return fetchJSON('api/players', {
+    method: 'POST',
+    body: JSON.stringify(player)
+  }).then(player => {
+    // TODO this should be fixed server side. Server expects a number but returns a string
+    player.id = parseInt(player.id);
+    return player;
   });
 }
 
@@ -113,41 +86,41 @@ async function reset() {
   })
 }
 
-async function mockGame() {
-  await reset();
-  appState.reset();
-  mockStartedGame();
-}
+// async function mockGame() {
+//   await reset();
+//   appState.reset();
+//   mockStartedGame();
+// }
 
-(window as any).mockGame = mockGame;
-(window as any).mockStartedGame = mockStartedGame;
-(window as any).reset = reset;
-(window as any).restart = () => {
-  reset();
-  location.href = '/';
-};
+// (window as any).mockGame = mockGame;
+// (window as any).mockStartedGame = mockStartedGame;
+// (window as any).reset = reset;
+// (window as any).restart = () => {
+//   reset();
+//   location.href = '/';
+// };
 
-function mockStartedGame() {
-  const currentPlayer = { id: '1', name: '1', ready: false };
-  const promises = [
-    currentPlayer,
-    { id: '2', name: '2' },
-    { id: '3', name: '3' },
-    { id: '4', name: '4' },
-    { id: '5', name: '5' },
-  ].map(async (player) => {
-    let isCurrentPlayer = player.id === currentPlayer.id;
+// function mockStartedGame() {
+//   const currentPlayer = { id: '1', name: '1', ready: false };
+//   const promises = [
+//     currentPlayer,
+//     { id: '2', name: '2' },
+//     { id: '3', name: '3' },
+//     { id: '4', name: '4' },
+//     { id: '5', name: '5' },
+//   ].map(async (player) => {
+//     let isCurrentPlayer = player.id === currentPlayer.id;
 
-    if (isCurrentPlayer) {
-      appState.setCurrentPlayer(currentPlayer);
-    }
-    await joinPlayer(player.id, player.name)
-    await playerReady(player.id);
-    if (isCurrentPlayer) {
-      appState.setState({ currentPlayerReady: true });
-    }
+//     if (isCurrentPlayer) {
+//       appState.setCurrentPlayer(currentPlayer);
+//     }
+//     // await joinPlayer(player.id, player.name)
+//     await playerReady(player.id);
+//     if (isCurrentPlayer) {
+//       appState.setState({ currentPlayerReady: true });
+//     }
 
-  });
+//   });
 
-  return Promise.all(promises);
-}
+//   return Promise.all(promises);
+// }

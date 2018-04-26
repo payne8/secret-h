@@ -12,8 +12,7 @@ import { MainGame } from './routes/MainGame';
 class _App extends React.Component<{ history: any }> {
   componentDidMount() {
     appState
-      .registerRouter(this.props.history)
-      .fetchInitialState();
+      .registerRouter(this.props.history);
   }
 
   // this is for HMR

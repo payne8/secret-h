@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Provider, Subscribe, Container } from 'unstated';
 import { Events, Party, Role } from './types';
-import { getGames } from './api';
+import { getGames, postEvent } from './api';
 
 class SSE {
   private source: EventSource;
@@ -41,28 +41,32 @@ class SSE {
 
 export interface Player {
   id: string
-  name: string
+  email?: string
+  username?: string
+  name?: string
+  thumbnailUrl?: string
   ready: boolean
   party?: Party
   role?: Role
 }
 
-export interface State {
-  currentPlayer: Player
-  currentPlayerReady: boolean
-  players: Player[]
+export interface Game {
+  id: string
   state: '' | 'lobby' | 'init' | 'started' | 'finished'
+}
+
+export interface State {
   initted: boolean
+  currentPlayer: null | Player
+  game: null | Game
 }
 
 // global app state
 export class AppState extends Container<State> {
   state: State = {
-    currentPlayer: { id: '1', name: 'Default', ready: false },
-    currentPlayerReady: false,
-    players: [],
-    state: '',
-    initted: false
+    initted: false,
+    currentPlayer: null,
+    game: null
   };
   eventSource: SSE;
   router;
@@ -78,9 +82,6 @@ export class AppState extends Container<State> {
     this.eventSource.listen<any>(Events.TypeGameUpdate, (state) => {
       console.log(`game update`, state);
       this.setState({ ...this.state, ...state.game });
-      if(state.game.nextPresidentID === this.state.currentPlayer.id) {
-
-      }
     });
 
     this.eventSource.listen<any>('state', (state) => {
@@ -92,29 +93,26 @@ export class AppState extends Container<State> {
 
   reset() {
     this.setState({
-      currentPlayer: { id: '1', name: 'Default', ready: false },
-      currentPlayerReady: false,
-      players: [],
-      state: '',
-      initted: false
+      initted: false,
+      currentPlayer: null,
+      game: null
     });
-    return this.fetchInitialState();
   }
 
-  async fetchInitialState() {
-    const games = await getGames();
-    let stateUpdate: Partial<State> = {};
-    if (games && games.length > 0) {
-      stateUpdate.state = games[0].state;
-    }
-    stateUpdate.initted = true;
-    this.setState(stateUpdate);
-    return this;
-  }
-
-  setCurrentPlayer(player: Player) {
+  async setCurrentPlayer(player: Player) {
     this.setState({ currentPlayer: player });
+    await postEvent(this.state.game.id, player.id, Events.TypePlayerJoin, this.state.currentPlayer);
     this.router.push('/game');
+  }
+
+  async setCurrentGame(game) {
+    this.setState({ game });
+    if (!this.state.currentPlayer) {
+      this.router.push('/join');
+    } else {
+      await postEvent(game.id, this.state.currentPlayer.id, Events.TypePlayerJoin, this.state.currentPlayer);
+      this.router.push('/game');
+    }
   }
 
   destroy() {

@@ -3,7 +3,6 @@ import { Subscribe } from 'unstated';
 import { appState, State } from '../state';
 import { Player } from '../components/Player';
 import { If } from '../components/If';
-import { playerReady } from '../api';
 import { Header } from '../components/Header';
 
 export class MainGame extends React.Component {
@@ -11,8 +10,8 @@ export class MainGame extends React.Component {
 
   ready = () => {
     if (appState.state.currentPlayer) {
-      playerReady(appState.state.currentPlayer.id).catch(console.error);
-      appState.setState({ currentPlayerReady: true });
+      // playerReady(appState.state.currentPlayer.id).catch(console.error);
+      // appState.setState({ currentPlayerReady: true });
     }
   };
 
@@ -24,20 +23,20 @@ export class MainGame extends React.Component {
             <Header title="Round" />
 
             <div>
-              Game is {state.state || 'not started yet'}.
+              Game is {state.game.state || 'not started yet'}.
             </div>
 
             <div style={{ textAlign: 'center', marginBottom: '1em' }}>
-              <If condition={state.state === '' && !state.currentPlayerReady}>
+              {/* <If condition={state.state === '' && !state.currentPlayerReady}>
                 <button onClick={this.ready}>I'm ready to begin</button>
                 <small>(When everyone says they're ready, the game begins)</small>
-              </If>
+              </If> */}
             </div>
 
             <div className="player-container">
-              {state.players.filter(p => p.id !== state.currentPlayer.id).map(p => (
+              {/* {state.players.filter(p => p.id !== state.currentPlayer.id).map(p => (
                 <Player key={p.id} name={p.name} id={p.id} />
-              ))}
+              ))} */}
             </div>
           </div>
         )}

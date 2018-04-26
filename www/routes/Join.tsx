@@ -1,43 +1,48 @@
 import * as React from 'react';
-import { joinPlayer } from '../api';
+import { createPlayer } from '../api';
 import { Header } from '../components/Header';
 import { appState } from '../state';
 
 export class Join extends React.Component {
-  name: string = '';
+  form = {
+    email: '',
+    password: ''
+  };
 
   join = () => {
-    const player = {
-      id: this.name.toLowerCase().replace(/\s+/, ''),
-      name: this.name,
-      ready: false
-    };
-
-    return joinPlayer(player.id, player.name)
-      .then(() => {
+    return createPlayer(this.form)
+      .then((player) => {
         appState.setCurrentPlayer(player);
       })
       .catch(console.error);
   }
 
-  onChange = (event: any) => {
-    this.name = event.target.value;
+  onChange = (event: any, key: string) => {
+    this.form[key] = event.target.value;
   }
 
   render() {
     return (
-      <div>
+      <form onSubmit={event => { event.preventDefault(); this.join();}}>
         <Header title="Join Game" />
         <div style={{ marginBottom: '1em' }}>
-          <label>
+          <label style={{ marginBottom: '2em' }}>
             Name <br />
-            <input type="text" name="firstName" onChange={this.onChange} />
+            <input type="text" name="firstName" onChange={event => this.onChange(event, 'name')} />
+          </label>
+          <label style={{ marginBottom: '2em' }}>
+            Email <br />
+            <input type="email" name="email" onChange={event => this.onChange(event, 'email')} />
+          </label>
+          <label>
+            Password <br />
+            <input type="password" name="password" onChange={event => this.onChange(event, 'password')} />
           </label>
         </div>
-        <button onClick={this.join}>
+        <button type="submit">
           Join
         </button>
-      </div>
+      </form>
     );
   }
 }
