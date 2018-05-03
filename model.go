@@ -8,13 +8,14 @@ import (
 func GameFromGame(g sh.Game) Game {
 	ret := Game{}
 	ret.ID = g.ID
+	ret.Secret = g.Secret
 	ret.EventID = g.EventID
 	ret.State = g.State
 	ret.Draw = g.Draw
 	ret.Discard = g.Discard
 	ret.Liberal = g.Liberal
 	ret.Facist = g.Facist
-	ret.FailedVotes = g.FailedVotes
+	ret.ElectionTracker = g.ElectionTracker
 	ret.Players = []GamePlayer{}
 	for _, p := range g.Players {
 		np := GamePlayer{
@@ -26,6 +27,7 @@ func GameFromGame(g sh.Game) Game {
 			ExecutedBy:     p.ExecutedBy,
 			InvestigatedBy: p.InvestigatedBy,
 			LastAction:     p.LastAction,
+			Status:         p.Status,
 		}
 		ret.Players = append(ret.Players, np)
 	}
@@ -55,13 +57,14 @@ func GameFromGame(g sh.Game) Game {
 
 type Game struct {
 	ID                         string       `json:"id"`
+	Secret                     string       `json:"secret"`
 	EventID                    int          `json:"eventID"`
 	State                      string       `json:"state"`
 	Draw                       []string     `json:"draw"`
 	Discard                    []string     `json:"discard"`
 	Liberal                    int          `json:"liberal"`
 	Facist                     int          `json:"facist"`
-	FailedVotes                int          `json:"failedVotes"`
+	ElectionTracker            int          `json:"electionTracker"`
 	Players                    []GamePlayer `json:"players"`
 	Round                      Round        `json:"round"`
 	NextPresidentID            string       `json:"nextPresidentID"`
@@ -82,6 +85,7 @@ type GamePlayer struct {
 	ExecutedBy     string    `json:"executedBy"`
 	InvestigatedBy string    `json:"investigatedBy"`
 	LastAction     time.Time `json:"lastAction"`
+	Status         string    `json:"status"`
 }
 
 type Round struct {

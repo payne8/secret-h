@@ -9,26 +9,30 @@ import (
 	"flag"
 	sh "github.com/murphysean/secrethitler"
 	tb "github.com/nsf/termbox-go"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 var (
 	ghost     string
 	ggameID   string
 	gplayerID string
+	glog      string
 )
 
 func init() {
-	flag.StringVar(&ghost, "host", "localhost:8080", "The host")
+	flag.StringVar(&ghost, "host", "http://localhost:8080", "The host")
 	flag.StringVar(&ggameID, "gameid", "nil", "The gameID (required)")
 	flag.StringVar(&gplayerID, "playerid", "", "The playerID")
+	flag.StringVar(&glog, "", "Log (e)vents (s)tate (v)ariables (n)etwork")
 }
 
 func main() {
 	flag.Parse()
-	f, err := os.OpenFile("log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile("shcli-log-"+ggameID+"-"+gplayerID, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}
@@ -36,7 +40,7 @@ func main() {
 
 	log.SetOutput(f)
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, "host", "http://"+ghost)
+	ctx = context.WithValue(ctx, "host", ghost)
 	ctx = context.WithValue(ctx, "gameID", ggameID)
 	ctx = context.WithValue(ctx, "playerID", gplayerID)
 
@@ -52,8 +56,9 @@ func main() {
 	states := []sh.Game{}
 
 	var myEvent sh.Event
-	var myAssert sh.AssertEvent
-	myAssert.PlayerID = ctx.Value("playerID").(string)
+	var myAsserts []sh.AssertEvent
+	var myErr string
+	var myMessages []string
 
 	ec, sc, err := openSSE(ctx)
 	if err != nil {
@@ -65,41 +70,155 @@ func main() {
 			switch e.GetType() {
 			case sh.TypeRequestAcknowledge:
 				myEvent = e
+				if strings.Contains(glog, "v") {
+					log.Println("setevent:", e)
+				}
 			case sh.TypeRequestNominate:
 				re := e.(sh.RequestEvent)
 				if re.PlayerID == ctx.Value("playerID").(string) {
 					myEvent = e
+					if strings.Contains(glog, "v") {
+						log.Println("setevent:", e)
+					}
 				}
 			case sh.TypeRequestVote:
 				myEvent = e
+				if strings.Contains(glog, "v") {
+					log.Println("setevent:", e)
+				}
 			case sh.TypeRequestLegislate:
 				re := e.(sh.RequestEvent)
 				if re.PlayerID == ctx.Value("playerID").(string) {
 					myEvent = e
-					myAssert.Type = sh.TypeAssertPolicies
-					myAssert.RoundID = re.RoundID
-					myAssert.Policies = re.Policies
-					myAssert.Token = re.Token
+					if strings.Contains(glog, "v") {
+						log.Println("setevent:", e)
+					}
+					ma := sh.AssertEvent{
+						PlayerID:     ctx.Value("playerID").(string),
+						BaseEvent:    sh.BaseEvent{Type: sh.TypeAssertPolicies},
+						RoundID:      re.RoundID,
+						PolicySource: sh.RoundStateLegislating,
+						Policies:     re.Policies,
+						Token:        re.Token,
+					}
+					myAsserts = append(myAsserts, ma)
 				}
 			case sh.TypeRequestExecutiveAction:
 				re := e.(sh.RequestEvent)
 				if re.PlayerID == ctx.Value("playerID").(string) {
 					myEvent = e
+					if strings.Contains(glog, "v") {
+						log.Println("setevent:", e)
+					}
 				}
 			case sh.TypeGameInformation:
 				ie := e.(sh.InformationEvent)
 				if ie.PlayerID == ctx.Value("playerID").(string) {
 					if ie.Party != "" {
-						myAssert.Type = sh.TypeAssertParty
-						myAssert.OtherPlayerID = ie.OtherPlayerID
-						myAssert.Party = ie.Party
+						ma := sh.AssertEvent{
+							PlayerID:      ctx.Value("playerID").(string),
+							BaseEvent:     sh.BaseEvent{Type: sh.TypeAssertParty},
+							RoundID:       ie.RoundID,
+							OtherPlayerID: ie.OtherPlayerID,
+							Party:         ie.Party,
+							Token:         ie.Token,
+						}
+						myAsserts = append(myAsserts, ma)
 					}
 					if len(ie.Policies) > 0 {
-						myAssert.Type = sh.TypeAssertPolicies
-						myAssert.Policies = ie.Policies
+						ma := sh.AssertEvent{
+							PlayerID:     ctx.Value("playerID").(string),
+							BaseEvent:    sh.BaseEvent{Type: sh.TypeAssertPolicies},
+							RoundID:      ie.RoundID,
+							PolicySource: sh.ExecutiveActionPeek,
+							Policies:     ie.Policies,
+							Token:        ie.Token,
+						}
+						myAsserts = append(myAsserts, ma)
 					}
-					myAssert.RoundID = ie.RoundID
-					myAssert.Token = ie.Token
+				}
+			case sh.TypeAssertParty:
+				ae := e.(sh.AssertEvent)
+				if ae.PlayerID == ctx.Value("playerID").(string) {
+					if len(myAsserts) > 0 && ae.RoundID == myAsserts[0].RoundID {
+						myAsserts = myAsserts[1:]
+					}
+				}
+				myMessages = append(myMessages, "Player "+ae.PlayerID+" claims "+ae.OtherPlayerID+" party is "+ae.Party)
+			case sh.TypeAssertPolicies:
+				ae := e.(sh.AssertEvent)
+				if ae.PlayerID == ctx.Value("playerID").(string) {
+					if len(myAsserts) > 0 && ae.RoundID == myAsserts[0].RoundID {
+						myAsserts = myAsserts[1:]
+					}
+				}
+				if ae.PolicySource == sh.RoundStateLegislating {
+					myMessages = append(myMessages, "Player "+ae.PlayerID+" claims they were dealt "+strings.Join(ae.Policies, ", "))
+				} else {
+					myMessages = append(myMessages, "Player "+ae.PlayerID+" claims they observed "+strings.Join(ae.Policies, ", "))
+				}
+			case sh.TypeGameVoteResults:
+				if myEvent != nil {
+					if me, ok := myEvent.(sh.RequestEvent); ok {
+						if me.Type == sh.TypeRequestVote {
+							myEvent = nil
+							if strings.Contains(glog, "v") {
+								log.Println("unsetevent:", e)
+							}
+						}
+					}
+				}
+				vre := e.(sh.VoteResultEvent)
+				downvoters := []string{}
+				for _, v := range vre.Votes {
+					if !v.Vote {
+						downvoters = append(downvoters, v.PlayerID)
+					}
+				}
+				if len(downvoters) == 0 {
+					downvoters = []string{"nobody"}
+				}
+				result := "Failed"
+				if vre.Succeeded {
+					result = "Succeeded"
+				}
+				myMessages = append(myMessages, "Vote "+result+" with "+strings.Join(downvoters, ", ")+" downvoting")
+			case sh.TypePlayerNominate:
+				if myEvent != nil {
+					if me, ok := myEvent.(sh.RequestEvent); ok {
+						if me.Type == sh.TypeRequestNominate {
+							myEvent = nil
+							if strings.Contains(glog, "v") {
+								log.Println("unsetevent:", e)
+							}
+						}
+					}
+				}
+			case sh.TypePlayerLegislate:
+				if myEvent != nil {
+					if me, ok := myEvent.(sh.RequestEvent); ok {
+						if me.Type == sh.TypeRequestLegislate {
+							myEvent = nil
+							if strings.Contains(glog, "v") {
+								log.Println("unsetevent:", e)
+							}
+						}
+					}
+				}
+			case sh.TypePlayerSpecialElection:
+				fallthrough
+			case sh.TypePlayerInvestigate:
+				fallthrough
+			case sh.TypePlayerExecute:
+				if myEvent != nil {
+					if me, ok := myEvent.(sh.RequestEvent); ok {
+						if me.Type == sh.TypeRequestExecutiveAction {
+							myEvent = nil
+							if strings.Contains(glog, "v") {
+								log.Println("unsetevent:", e)
+							}
+						}
+					}
 				}
 			}
 			tb.Interrupt()
@@ -235,60 +354,68 @@ func main() {
 							PlayerID:  ctx.Value("playerID").(string),
 							Discard:   sh.PolicyFacist,
 						}
+					case 'v':
+						se = sh.PlayerLegislateEvent{
+							BaseEvent: sh.BaseEvent{Type: sh.TypePlayerLegislate},
+							PlayerID:  ctx.Value("playerID").(string),
+							Veto:      true,
+						}
 					}
 					if se != nil {
 						err = sendEvent(ctx, se)
-						if err == nil {
+						if err != nil {
+							myErr = err.Error()
+						} else {
 							myEvent = nil
+							if strings.Contains(glog, "v") {
+								log.Println("unsetevent:", se)
+							}
+							myErr = ""
 						}
 					}
-				} else if len(states) > 0 && myAssert.Type != "" {
+				} else if len(states) > 0 && len(myAsserts) > 0 {
 					switch ev.Ch {
 					case '0':
-						if myAssert.Type == sh.TypeAssertPolicies {
-							for i, _ := range myAssert.Policies {
-								myAssert.Policies[i] = sh.PolicyFacist
+						if myAsserts[0].Type == sh.TypeAssertPolicies {
+							for i, _ := range myAsserts[0].Policies {
+								myAsserts[0].Policies[i] = sh.PolicyFacist
 							}
 						}
 					case '1':
-						if myAssert.Type == sh.TypeAssertPolicies {
-							for i, _ := range myAssert.Policies {
-								myAssert.Policies[i] = sh.PolicyFacist
+						if myAsserts[0].Type == sh.TypeAssertPolicies {
+							for i, _ := range myAsserts[0].Policies {
+								myAsserts[0].Policies[i] = sh.PolicyFacist
 							}
-							myAssert.Policies[0] = sh.PolicyLiberal
+							myAsserts[0].Policies[0] = sh.PolicyLiberal
 						}
 					case '2':
-						if myAssert.Type == sh.TypeAssertPolicies {
-							for i, _ := range myAssert.Policies {
-								myAssert.Policies[i] = sh.PolicyLiberal
+						if myAsserts[0].Type == sh.TypeAssertPolicies {
+							for i, _ := range myAsserts[0].Policies {
+								myAsserts[0].Policies[i] = sh.PolicyFacist
 							}
-							if len(myAssert.Policies) > 2 {
-								myAssert.Policies[0] = sh.PolicyFacist
-							}
+							myAsserts[0].Policies[0] = sh.PolicyLiberal
+							myAsserts[0].Policies[1] = sh.PolicyLiberal
 						}
 					case '3':
-						if myAssert.Type == sh.TypeAssertPolicies {
-							for i, _ := range myAssert.Policies {
-								myAssert.Policies[i] = sh.PolicyLiberal
+						if myAsserts[0].Type == sh.TypeAssertPolicies {
+							for i, _ := range myAsserts[0].Policies {
+								myAsserts[0].Policies[i] = sh.PolicyLiberal
 							}
 						}
 					case 'l':
-						if myAssert.Type == sh.TypeAssertParty {
-							myAssert.Party = sh.PartyLiberal
+						if myAsserts[0].Type == sh.TypeAssertParty {
+							myAsserts[0].Party = sh.PartyLiberal
 						}
 					case 'f':
-						if myAssert.Type == sh.TypeAssertParty {
-							myAssert.Party = sh.PartyFacist
+						if myAsserts[0].Type == sh.TypeAssertParty {
+							myAsserts[0].Party = sh.PartyFacist
 						}
 					}
-					err = sendEvent(ctx, myAssert)
-					if err == nil {
-						myAssert.Type = ""
-						myAssert.OtherPlayerID = ""
-						myAssert.Party = ""
-						myAssert.Token = ""
-						myAssert.RoundID = 0
-						myAssert.Policies = []string{}
+					err = sendEvent(ctx, myAsserts[0])
+					if err != nil {
+						//Display the error message
+						myErr = err.Error()
+					} else {
 					}
 				}
 			}
@@ -299,7 +426,9 @@ func main() {
 		if len(states) > 0 {
 			drawPlayers(states[currIdx])
 			drawGameBoard(states[currIdx])
-			drawEventPrompt(states[currIdx], myEvent, myAssert)
+			drawEventPrompt(states[currIdx], myEvent, myAsserts)
+			drawErrorMessage(myErr)
+			drawMessages(myMessages)
 		}
 		tb.Flush()
 	}
@@ -309,13 +438,36 @@ func getNameForID(id string) string {
 	return id
 }
 
-func drawEventPrompt(g sh.Game, e sh.Event, ae sh.AssertEvent) {
+func drawErrorMessage(es string) {
+	if es == "" {
+		return
+	}
+	drawStringAt("Err: "+es, 0, 11, tb.ColorDefault, tb.ColorDefault)
+}
+
+func drawMessages(msgs []string) {
+	if len(msgs) > 5 {
+		msgs = msgs[len(msgs)-5:]
+	}
+	for i, msg := range msgs {
+		drawStringAt(msg, 0, 12+i, tb.ColorDefault, tb.ColorDefault)
+	}
+}
+
+func drawEventPrompt(g sh.Game, e sh.Event, aes []sh.AssertEvent) {
 	if e == nil {
-		switch ae.GetType() {
-		case sh.TypeAssertPolicies:
-			drawStringAt("Tell others how many liberal policies you saw (0-3):", 0, 10, tb.ColorDefault, tb.ColorDefault)
-		case sh.TypeAssertParty:
-			drawStringAt("Tell others what party you investigated (l/f):", 0, 10, tb.ColorDefault, tb.ColorDefault)
+		if len(aes) > 0 {
+			ae := aes[0]
+			switch ae.GetType() {
+			case sh.TypeAssertPolicies:
+				if ae.PolicySource == sh.RoundStateLegislating {
+					drawStringAt("Tell others how many liberal policies you were dealt (0-3):", 0, 10, tb.ColorDefault, tb.ColorDefault)
+				} else {
+					drawStringAt("Tell others how many liberal policies are available next round (0-3):", 0, 10, tb.ColorDefault, tb.ColorDefault)
+				}
+			case sh.TypeAssertParty:
+				drawStringAt("Tell others what party you investigated (l/f):", 0, 10, tb.ColorDefault, tb.ColorDefault)
+			}
 		}
 		return
 	}
@@ -332,7 +484,7 @@ func drawEventPrompt(g sh.Game, e sh.Event, ae sh.AssertEvent) {
 		}
 	case sh.TypeRequestLegislate:
 		if g.Round.State == sh.RoundStateLegislating {
-			drawStringAt("Choose a policy to discard(l/f):", 0, 10, tb.ColorDefault, tb.ColorDefault)
+			drawStringAt("Choose a policy to discard(l/f) or (v)eto:", 0, 10, tb.ColorDefault, tb.ColorDefault)
 		}
 	case sh.TypeRequestExecutiveAction:
 		if g.Round.State == sh.RoundStateExecutiveAction {
@@ -358,13 +510,14 @@ func drawPlayers(g sh.Game) {
 			}
 			fallthrough
 		case sh.GameStateStarted:
-			switch p.Role {
-			case sh.RoleHitler:
-				fg = tb.ColorRed | tb.AttrBold
+			switch p.Party {
 			case sh.RoleFacist:
 				fg = tb.ColorRed
 			case sh.RoleLiberal:
 				fg = tb.ColorBlue
+			}
+			if p.Role == sh.RoleHitler {
+				fg = tb.ColorYellow
 			}
 			if p.ExecutedBy != "" {
 				tb.SetCell(0, i, 'X', tb.ColorRed, tb.ColorDefault)
@@ -410,7 +563,7 @@ func drawGameBoard(g sh.Game) {
 	tb.SetCell(21, 1, '.', tb.ColorDefault, tb.ColorDefault)
 	tb.SetCell(22, 1, '.', tb.ColorDefault, tb.ColorDefault)
 	tb.SetCell(23, 1, '.', tb.ColorDefault, tb.ColorDefault)
-	switch g.FailedVotes {
+	switch g.ElectionTracker {
 	case 1:
 		tb.SetCell(21, 1, 'x', tb.ColorDefault, tb.ColorDefault)
 	case 2:
@@ -529,7 +682,7 @@ func openSSE(ctx context.Context) (<-chan sh.Event, <-chan sh.Game, error) {
 		for {
 			b, err := br.ReadBytes('\n')
 			if err != nil {
-				log.Println("opensse:readbytes:", err)
+				//log.Println("opensse:readbytes:", err)
 				return
 			}
 			i := bytes.Index(b, []byte(":"))
@@ -545,14 +698,18 @@ func openSSE(ctx context.Context) (<-chan sh.Event, <-chan sh.Game, error) {
 						if err != nil {
 							continue
 						}
-						log.Println("opensse:sending:game:", g)
+						if strings.Contains(glog, "s") {
+							log.Println("opensse:sending:game:", g)
+						}
 						gc <- g
 					default:
 						e, err := sh.UnmarshalEvent(b[5:])
 						if err != nil {
 							continue
 						}
-						log.Println("opensse:sending:event:", e)
+						if strings.Contains(glog, "e") {
+							log.Println("opensse:sending:event:", e)
+						}
 						ec <- e
 					}
 				}
@@ -576,7 +733,8 @@ func sendEvent(ctx context.Context, e sh.Event) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusAccepted {
-		return errors.New("status code " + resp.Status)
+		b, _ := ioutil.ReadAll(resp.Body)
+		return errors.New(string(b))
 	}
 
 	return nil
