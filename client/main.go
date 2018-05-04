@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	sh "github.com/murphysean/secrethitler"
 	tb "github.com/nsf/termbox-go"
 	"io/ioutil"
@@ -27,7 +28,7 @@ func init() {
 	flag.StringVar(&ghost, "host", "http://localhost:8080", "The host")
 	flag.StringVar(&ggameID, "gameid", "nil", "The gameID (required)")
 	flag.StringVar(&gplayerID, "playerid", "", "The playerID")
-	flag.StringVar(&glog, "", "Log (e)vents (s)tate (v)ariables (n)etwork")
+	flag.StringVar(&glog, "log", "", "Log (e)vents (s)tate (v)ariables (n)etwork")
 }
 
 func main() {
@@ -93,15 +94,17 @@ func main() {
 					if strings.Contains(glog, "v") {
 						log.Println("setevent:", e)
 					}
-					ma := sh.AssertEvent{
-						PlayerID:     ctx.Value("playerID").(string),
-						BaseEvent:    sh.BaseEvent{Type: sh.TypeAssertPolicies},
-						RoundID:      re.RoundID,
-						PolicySource: sh.RoundStateLegislating,
-						Policies:     re.Policies,
-						Token:        re.Token,
+					if !re.Veto {
+						ma := sh.AssertEvent{
+							PlayerID:     ctx.Value("playerID").(string),
+							BaseEvent:    sh.BaseEvent{Type: sh.TypeAssertPolicies},
+							RoundID:      re.RoundID,
+							PolicySource: sh.RoundStateLegislating,
+							Policies:     re.Policies,
+							Token:        re.Token,
+						}
+						myAsserts = append(myAsserts, ma)
 					}
-					myAsserts = append(myAsserts, ma)
 				}
 			case sh.TypeRequestExecutiveAction:
 				re := e.(sh.RequestEvent)
@@ -455,6 +458,8 @@ func drawMessages(msgs []string) {
 }
 
 func drawEventPrompt(g sh.Game, e sh.Event, aes []sh.AssertEvent) {
+	cards := g.Facist + g.Liberal + len(g.Discard) + len(g.Draw) + len(g.Round.Policies)
+	drawStringAt(fmt.Sprintf("Policy Count: %d", cards), 0, 20, tb.ColorDefault, tb.ColorDefault)
 	if e == nil {
 		if len(aes) > 0 {
 			ae := aes[0]
@@ -483,8 +488,15 @@ func drawEventPrompt(g sh.Game, e sh.Event, aes []sh.AssertEvent) {
 			drawStringAt("Vote y/n on president/chancellor:", 0, 10, tb.ColorDefault, tb.ColorDefault)
 		}
 	case sh.TypeRequestLegislate:
+		le := e.(sh.RequestEvent)
 		if g.Round.State == sh.RoundStateLegislating {
-			drawStringAt("Choose a policy to discard(l/f) or (v)eto:", 0, 10, tb.ColorDefault, tb.ColorDefault)
+			if g.Facist >= 5 && g.Round.ChancellorID == le.PlayerID {
+				drawStringAt("Choose a policy to discard(l/f) or (v)eto:", 0, 10, tb.ColorDefault, tb.ColorDefault)
+			} else if le.Veto {
+				drawStringAt("Chancelor has requested (v)eto, press f otherwise:", 0, 10, tb.ColorDefault, tb.ColorDefault)
+			} else {
+				drawStringAt("Choose a policy to discard(l/f):", 0, 10, tb.ColorDefault, tb.ColorDefault)
+			}
 		}
 	case sh.TypeRequestExecutiveAction:
 		if g.Round.State == sh.RoundStateExecutiveAction {
