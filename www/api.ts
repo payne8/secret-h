@@ -52,6 +52,10 @@ export function getGames() {
   return fetchJSON('/api/games');
 }
 
+export function createGame() {
+  return fetchJSON('/api/games', {method: 'POST'});
+}
+
 export function joinPlayer(id: string, name: string) {
   return postEvent(Events.TypePlayerJoin, {
     player: {

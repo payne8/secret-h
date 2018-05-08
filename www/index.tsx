@@ -7,6 +7,7 @@ import { appState } from './state';
 
 import { Lobby } from './routes/Lobby';
 import { Join } from './routes/Join';
+import { Create } from './routes/Create';
 import { MainGame } from './routes/MainGame';
 
 class _App extends React.Component<{ history: any }> {
@@ -26,6 +27,7 @@ class _App extends React.Component<{ history: any }> {
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
         <Route exact path="/" component={Lobby} />
         <Route path="/join" component={Join} />
+        <Route path="/create" component={Create} />
         <Route path="/observe" component={() => <span>Not implemented yet</span>} />
         <Route path="/game" component={MainGame} />
       </div>

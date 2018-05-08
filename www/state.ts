@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Provider, Subscribe, Container } from 'unstated';
 import { Events, Party, Role } from './types';
-import { getGames } from './api';
+import { getGames, createGame } from './api';
 
 class SSE {
   private source: EventSource;
@@ -48,22 +48,28 @@ export interface Player {
 }
 
 export interface State {
+  availableGames: any[];
   currentPlayer: Player
   currentPlayerReady: boolean
+  currentGameId: string
   players: Player[]
   state: '' | 'lobby' | 'init' | 'started' | 'finished'
   initted: boolean
 }
 
+const initialState: State = {
+  availableGames: [],
+  currentPlayer: { id: '1', name: 'Default', ready: false },
+  currentPlayerReady: false,
+  currentGameId: '',
+  players: [],
+  state: '',
+  initted: false
+};
+
 // global app state
 export class AppState extends Container<State> {
-  state: State = {
-    currentPlayer: { id: '1', name: 'Default', ready: false },
-    currentPlayerReady: false,
-    players: [],
-    state: '',
-    initted: false
-  };
+  state: State = initialState;
   eventSource: SSE;
   router;
 
@@ -91,13 +97,7 @@ export class AppState extends Container<State> {
   }
 
   reset() {
-    this.setState({
-      currentPlayer: { id: '1', name: 'Default', ready: false },
-      currentPlayerReady: false,
-      players: [],
-      state: '',
-      initted: false
-    });
+    this.setState(initialState);
     return this.fetchInitialState();
   }
 
@@ -105,11 +105,26 @@ export class AppState extends Container<State> {
     const games = await getGames();
     let stateUpdate: Partial<State> = {};
     if (games && games.length > 0) {
-      stateUpdate.state = games[0].state;
+      stateUpdate.availableGames = games;
+      // stateUpdate.state = games[0].state;
     }
     stateUpdate.initted = true;
     this.setState(stateUpdate);
     return this;
+  }
+
+  setCurrentGame(game: Game) {
+    let stateUpdate: Partial<State> = {};
+    stateUpdate.state = game.state;
+    stateUpdate.currentGameId = game.id;
+    this.setState(stateUpdate);
+  }
+
+  createGame() {
+    createGame().then((game: Game) => {
+      this.setCurrentGame(game);
+      this.router.push('/join');
+    });
   }
 
   setCurrentPlayer(player: Player) {
