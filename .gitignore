@@ -15,6 +15,7 @@
 
 log.json
 secret-h
+games/
 
 # Front end
 www/node_modules
