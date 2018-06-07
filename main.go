@@ -12,6 +12,8 @@ import (
 	"sync"
 )
 
+var testingMode = true
+
 func main() {
 	//Specify a file to write all the events to
 
@@ -20,6 +22,7 @@ func main() {
 
 	apiHandler := NewAPIHandler()
 
+	http.HandleFunc("/api/login", apiHandler.LoginHandler)
 	http.Handle("/api/", apiHandler)
 
 	//A file handler for the static assets
@@ -29,6 +32,7 @@ func main() {
 }
 
 type APIHandler struct {
+	Sessions    map[string]*Player
 	ActiveGames map[string]*sh.SecretHitler
 	m           sync.RWMutex
 }
@@ -36,12 +40,30 @@ type APIHandler struct {
 func NewAPIHandler() *APIHandler {
 	ret := new(APIHandler)
 	ret.ActiveGames = make(map[string]*sh.SecretHitler)
+	ret.Sessions = make(map[string]*Player)
 	return ret
 }
 
 func (ah *APIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	//TODO Set this with the authenticated users playerID
-	ctx := context.WithValue(r.Context(), "playerID", r.URL.Query().Get("playerID"))
+	//Set this with the authenticated users playerID
+	ctx := r.Context()
+	playerID := ""
+	if h := r.Header.Get("Authorization"); h != "" && len(h) > 7 {
+		token := h[7:]
+		if ah.Sessions[token] != nil {
+			playerID = ah.Sessions[token].ID
+		}
+	}
+	if c, err := r.Cookie("shsid"); err == nil && playerID == "" {
+		if ah.Sessions[c.Value] != nil {
+			playerID = ah.Sessions[c.Value].ID
+		}
+	}
+	if testingMode && playerID == "" {
+		playerID = r.URL.Query().Get("playerID")
+	}
+	ctx = context.WithValue(r.Context(), "playerID", playerID)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Expose-Headers", "*")

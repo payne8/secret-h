@@ -8,6 +8,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/howeyc/gopass"
 	sh "github.com/murphysean/secrethitler"
 	tb "github.com/nsf/termbox-go"
 	"io/ioutil"
@@ -18,32 +19,58 @@ import (
 )
 
 var (
-	ghost     string
-	ggameID   string
-	gplayerID string
-	glog      string
+	ghost   string
+	ggameID string
+	gtoken  string
+	gemail  string
+	gplayer sh.Player
+	glog    string
 )
 
 func init() {
 	flag.StringVar(&ghost, "host", "http://localhost:8080", "The host")
 	flag.StringVar(&ggameID, "gameid", "nil", "The gameID (required)")
-	flag.StringVar(&gplayerID, "playerid", "", "The playerID")
+	flag.StringVar(&gemail, "email", "", "Players email address")
 	flag.StringVar(&glog, "log", "", "Log (e)vents (s)tate (v)ariables (n)etwork")
 }
 
 func main() {
 	flag.Parse()
-	f, err := os.OpenFile("shcli-log-"+ggameID+"-"+gplayerID, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "host", ghost)
+
+	//TODO If the email is not empty, attempt to sign the user in, or create a new player
+	if gemail != "" {
+		fmt.Printf("Password: ")
+
+		// Silent. For printing *'s use gopass.GetPasswdMasked()
+		pass, err := gopass.GetPasswd()
+		if err != nil {
+			// Handle gopass.ErrInterrupted or getch() read error
+			log.Fatalf("error getting password: %v\n", err)
+		}
+
+		// Do something with pass
+		gtoken, player, err := signIn(ctx, gemail, string(pass))
+		if err != nil {
+			//TODO If the player doesn't exist, create it
+			log.Fatalf("error signing in: %v\n", err)
+		}
+
+	}
+
+	//TODO If the gameid is empty, pull down a list of active gameids
+
+	f, err := os.OpenFile("shcli-log-"+ggameID+"-"+gplayer.ID, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Fatalf("error opening file: %v", err)
+		log.Fatalf("error opening file: %v\n", err)
 	}
 	defer f.Close()
 
 	log.SetOutput(f)
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, "host", ghost)
 	ctx = context.WithValue(ctx, "gameID", ggameID)
-	ctx = context.WithValue(ctx, "playerID", gplayerID)
+	ctx = context.WithValue(ctx, "playerID", gplayer.ID)
+	ctx = context.WithValue(ctx, "token", gtoken)
 
 	err = tb.Init()
 	if err != nil {
@@ -676,6 +703,65 @@ func drawStringAt(s string, x, y int, fg, bg tb.Attribute) {
 		tb.SetCell(x, y, r, fg, bg)
 		x = x + 1
 	}
+}
+
+func signIn(ctx context.Context, email, password string) (string, *sh.Player, error) {
+	creds := struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}{
+		Username: email,
+		Password: password,
+	}
+	var b bytes.Buffer
+	enc := json.NewEncoder(&b)
+	err := enc.Encode(&creds)
+	if err != nil {
+		return "", nil, err
+	}
+	resp, err := http.Post(ctx.Value("host").(string)+"/api/login", "application/json", &b)
+	ret := struct {
+		Token  string     `json:"token"`
+		Player *sh.Player `json:"player"`
+	}{}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", nil, errors.New("bad status:" + resp.Status)
+	}
+	d := json.NewDecoder(resp.Body)
+	err = d.Decode(&ret)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return ret.Token, ret.Player, nil
+
+}
+
+func createPlayer(ctx context.Context, player sh.Player) (*sh.Player, error) {
+	var b bytes.Buffer
+	enc := json.NewEncoder(&b)
+	err := enc.Encode(&player)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.Post(ctx.Value("host").(string)+"/api/player", "application/json", &b)
+	var ret *sh.Player
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("bad status:" + resp.Status)
+	}
+	d := json.NewDecoder(resp.Body)
+	err = d.Decode(&ret)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
+
+func getPlayer(ctx context.Context, playerID string) (sh.Player, error) {
+	resp, err := http.Get(ctx.Value("host").(string) + "/api/players/" + playerID)
 }
 
 func openSSE(ctx context.Context) (<-chan sh.Event, <-chan sh.Game, error) {

@@ -58,7 +58,7 @@ func GameFromGame(g sh.Game) Game {
 type Game struct {
 	ID                         string       `json:"id"`
 	Secret                     string       `json:"secret"`
-	EventID                    int          `json:"eventID"`
+	EventID                    int          `json:"eventId"`
 	State                      string       `json:"state"`
 	Draw                       []string     `json:"draw"`
 	Discard                    []string     `json:"discard"`
@@ -67,12 +67,12 @@ type Game struct {
 	ElectionTracker            int          `json:"electionTracker"`
 	Players                    []GamePlayer `json:"players"`
 	Round                      Round        `json:"round"`
-	NextPresidentID            string       `json:"nextPresidentID"`
-	PreviousPresidentID        string       `json:"previousPresidentID"`
-	PreviousChancellorID       string       `json:"previousChancellorID"`
+	NextPresidentID            string       `json:"nextPresidentId"`
+	PreviousPresidentID        string       `json:"previousPresidentId"`
+	PreviousChancellorID       string       `json:"previousChancellorId"`
 	PreviousEnactedPolicy      string       `json:"previousEnactedPolicy"`
-	SpecialElectionRoundID     int          `json:"specialElectionRoundID"`
-	SpecialElectionPresidentID string       `json:"specialElectionPresidentID"`
+	SpecialElectionRoundID     int          `json:"specialElectionRoundId"`
+	SpecialElectionPresidentID string       `json:"specialElectionPresidentId"`
 	WinningParty               string       `json:"winningParty"`
 }
 
@@ -90,8 +90,8 @@ type GamePlayer struct {
 
 type Round struct {
 	ID              int      `json:"id"`
-	PresidentID     string   `json:"presidentID"`
-	ChancellorID    string   `json:"chancellorID"`
+	PresidentID     string   `json:"presidentId"`
+	ChancellorID    string   `json:"chancellorId"`
 	State           string   `json:"state"`
 	Votes           []Vote   `json:"votes"`
 	Policies        []string `json:"policies"`
@@ -100,6 +100,6 @@ type Round struct {
 }
 
 type Vote struct {
-	PlayerID string `json:"playerID"`
+	PlayerID string `json:"playerId"`
 	Vote     bool   `json:"vote"`
 }
