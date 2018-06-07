@@ -1,0 +1,98 @@
+.no-display{
+	display: none;
+}
+
+#table{
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+
+#board{
+	display: flex;
+	flex-direction: column;
+}
+
+#liberal{
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+}
+
+#election-tracker{
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+}
+
+#facist{
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+}
+
+#players{
+	display: flex;
+	flex-direction: row;
+}
+
+#log{
+	overflow: scroll;
+	height: 200px;
+}
+
+.board-liberal{
+	width: 50px;
+	height: 50px;
+	background-color: lightblue;
+	border: 1px solid gray;
+}
+
+.board-facist{
+	width: 50px;
+	height: 50px;
+	background-color: lightcoral;
+	border: 1px solid gray;
+}
+
+.board-liberal-played {
+	background-color: blue;
+}
+
+.board-facist-played{
+	background-color: red;
+}
+
+.board-election-tracker {
+	width: 10px;
+	height: 10px;
+	border: 1px solid gray;
+}
+
+.board-election-tracker-spot{
+	background-color: gray;
+}
+
+.player{
+	width: 100px;
+	border: 1px solid gray;
+}
+
+.player-ready{
+	color: green;
+}
+
+.player-acknowledge{
+	font-weight: bold;
+}
+
+.player-party-facist.reveal-info{
+	border: 1px solid red;
+}
+.player-party-liberal.reveal-info{
+	border: 1px solid blue;
+}
+.player-role-hitler.reveal-info{
+	border: 1px solid yellow;
+}
+

@@ -1,15 +1,83 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>Secret Hitler</title>
-<link href="./style.css" rel="stylesheet">
+<script src="fetch.js"></script>
+<style>
+.no-display{
+	display: none;
+}
+</style>
 </head>
-
 <body>
-  <main id="app"></main>
+	<header id="header" class="no-display"></header>
+	<form id="login" name="login" class="no-display" action="/api/login" method="POST">
+		<label for="username">Email</label><input type="text" id="username" name="username"/>
+		<label for="password">Password</label><input type="password" id="password" name="password"/>
+		<button>Login</button>
+	</form>
+	<form id="register" name="register" class="no-display">
+		<label for="email">Email</label><input type="text" id="email" name="email"/>
+		<label for="password">Password</label><input type="password" id="password" name="password"/>
+		<button type="button" onClick="indexRegister()">Register</button>
+	</form>
 
-  <script src="./index.tsx"></script>
+	<section id="games">
+	</section>
+	<button onClick="indexCreateGame()">Create Game</button>
+<script>
+function indexRegister(){
+	let data = {};
+	let formdata = new FormData(document.querySelector("#register"));
+	for (let tuple of formdata.entries()) data[tuple[0]] = tuple[1];
+
+	//Submit registration
+	registerPlayer(data).then(function(player){
+		if(player.err){
+			console.log("err")
+			console.log(player)
+		}else{
+			console.log(player)
+			document.querySelector("#register").classList.add("no-display")
+		}
+	})
+}
+
+function indexCreateGame(){
+	createGame().then(function(game){
+	var l = document.createElement("a")
+	l.innerHTML = "New Game"
+	l.href = "/game.html?gameId=" + game.id;
+	document.querySelector("body").appendChild(l)
+	})
+}
+
+function drawGames(){
+	getGames().then(function(games){
+		for(let g of games){
+			if(g.state == ""){g.state = "initialized"}
+			var a = document.createElement("article")
+			var l = document.createElement("a")
+			l.innerHTML = g.state + " " + g.players
+			l.href = "/game.html?gameId="+g.id
+			a.appendChild(l)
+			document.querySelector("#games").appendChild(a)
+		}
+	})
+}
+getMe().then(function(me){
+	if(me.err){
+		//There was an error, show login/register
+		document.querySelector("#login").classList.remove("no-display")
+		document.querySelector("#register").classList.remove("no-display")
+	}else{
+		console.log("me")
+		document.querySelector("#header").innerHTML = "Welcome" + me.name
+	}
+}).catch(function(e){
+	console.log(e)
+})
+drawGames()
+</script>
 </body>
-
-</html> 

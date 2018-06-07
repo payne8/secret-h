@@ -26,7 +26,7 @@ func main() {
 	http.Handle("/api/", apiHandler)
 
 	//A file handler for the static assets
-	http.Handle("/", http.FileServer(http.Dir("www/dist")))
+	http.Handle("/", http.FileServer(http.Dir("www")))
 
 	http.ListenAndServe(":8080", nil)
 }
