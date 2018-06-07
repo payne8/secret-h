@@ -8,6 +8,7 @@
 <script src="events.js"></script>
 <script src="game.js"></script>
 <script src="sse.js"></script>
+
 </head>
 <body>
 	<header>
@@ -43,6 +44,11 @@
 				<article id="facist5" class="board-facist"></article>
 				<article id="facist6" class="board-facist"></article>
 			</section>
+			<section id="round">
+				<article id="rp1" class="no-display"></article>
+				<article id="rp2" class="no-display"></article>
+				<article id="rp3" class="no-display"></article>
+			</section>
 			<article id="win"></article>
 		</section>
 		<section id="discard"></section>
@@ -50,9 +56,19 @@
 	<section id="actions">
 	</section>
 	<aside id="players">
+		<template id="my-player">
+			<article class="player">
+				<img src="http://www.gravatar.com/avatar"/>
+				<header></header>
+				<footer></footer>
+			</article>
+		</template>
 	</aside>
 	<section id="actions"></section>
 	<button onClick="revealInfo()">Reveal/Hide</button>
-	<footer id="log"></footer>
+	<section id="log"></section>
+	<form id="message" name="message" class="no-display" onsubmit="return sendMessage()">
+		<input type="text"/><button>Submit</button>
+	</form>
 </body>
 </html> 

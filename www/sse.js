@@ -16,7 +16,11 @@ source.addEventListener("player", function(e){
 
 source.addEventListener("player.join", function(e){
 	let d = JSON.parse(e.data)
+	if(d.player.id == playerId){
+		document.querySelector("#join").classList.add("no-display")
+	}
 	if(d.player.id != playerId){
+		/*
 		getPlayer(d.player.id).then(function(p){
 			players.push(p)
 			//Update the player
@@ -24,13 +28,20 @@ source.addEventListener("player.join", function(e){
 			document.querySelector("#player-"+p.id+">header").innerHTML = p.name
 			
 		})
+		*/
 	}
 }, false)
 
-source.addEventListener("player.ready", function(e){},false)
+source.addEventListener("player.ready", function(e){
+	let d = JSON.parse(e.data)
+	if(d.player.id == playerId){
+		document.querySelector("#ready").classList.add("no-display")
+	}
+},false)
+
 source.addEventListener("player.acknowledge", function(e){
 	let d = JSON.parse(e.data)
-	if(d.playerId == playerId){
+	if(d.player.id == playerId){
 		revealInfo()
 		document.querySelector("#acknowledge").classList.add("no-display")
 	}
@@ -89,7 +100,7 @@ source.addEventListener("player.investigate", function(e){
 source.addEventListener("player.special_election", function(e){
 	let d = JSON.parse(e.data)
 	log = document.createElement("article")
-	log.innerHTML = "Player " + d.playerId + " has appointed " + d.otherPlayerId + " for the special election"
+	log.innerHTML = "Player " + getCachedPlayer(d.playerId).name + " has appointed " + getCachedPlayer(d.otherPlayerId).name + " for the special election"
 	document.querySelector("#log").appendChild(log)
 	document.querySelector("#log").scrollTop = document.querySelector("#log").scrollHeight;
 	if(d.playerId == playerId){
@@ -101,7 +112,7 @@ source.addEventListener("player.special_election", function(e){
 source.addEventListener("player.execute", function(e){
 	let d = JSON.parse(e.data)
 	log = document.createElement("article")
-	log.innerHTML = "Player " + d.playerId + " has executed " + d.otherPlayerId
+	log.innerHTML = "Player " + getCachedPlayer(d.playerId).name + " has executed " + getCachedPlayer(d.otherPlayerId).name
 	document.querySelector("#log").appendChild(log)
 	document.querySelector("#log").scrollTop = document.querySelector("#log").scrollHeight;
 	if(d.playerId == playerId){
@@ -110,7 +121,15 @@ source.addEventListener("player.execute", function(e){
 	}
 }, false)
 
-source.addEventListener("player.message", function(e){},false)
+source.addEventListener("player.message", function(e){
+	let d = JSON.parse(e.data)
+	log = document.createElement("article")
+	p = document.createElement("p")
+	p.innerHTML = getCachedPlayer(d.playerId).name + ": " + d.message
+	log.appendChild(p)
+	document.querySelector("#log").appendChild(log)
+	document.querySelector("#log").scrollTop = document.querySelector("#log").scrollHeight;
+},false)
 
 source.addEventListener("assert.policies", function(e){
 	let d = JSON.parse(e.data)
@@ -162,8 +181,7 @@ source.addEventListener("request.acknowledge", function(e){
 
 source.addEventListener("request.vote", function(e){
 	let d = JSON.parse(e.data)
-	console.log(d)
-	if(playerId != "" && (d.playerId == "all" || d.playerId == playerId)){
+	if(playerId != "" && d.playerId && getStatePlayer(playerId).executedBy == ""){
 		//Ask the player to vote
 		a = document.createElement("article")
 		a.classList.add("request-vote")
@@ -312,6 +330,7 @@ source.addEventListener("request.executive_action", function(e){
 		a.classList.add("request-executive-action")
 		p = document.createElement("p")
 		p.innerHTML = "Select another player for executive action " + d.executiveAction
+		a.appendChild(p)
 		f = function(e){
 			sendEvent(gameId, {"type":"player."+d.executiveAction,"playerId":playerId,"otherPlayerId":this.name}).then(function(r){
 				if(r.err){
@@ -326,6 +345,7 @@ source.addEventListener("request.executive_action", function(e){
 				b = document.createElement("button")
 				b.innerHTML = getCachedPlayer(p.id).name
 				b.name = p.id
+				b.addEventListener("click", f)
 				a.appendChild(b)
 			}
 		}

@@ -32,7 +32,7 @@ getMe().then(function(me){
 	if(me.err){
 		//There was an error, show login/register
 		console.log("me")
-		console.log(me)
+		console.log(me.err)
 	}else{
 		console.log("me")
 		playerId = me.id
@@ -68,7 +68,7 @@ function drawState(state){
 			document.querySelector("#join").classList.remove("no-display")
 			document.querySelector("#ready").classList.remove("no-display")
 		}
-		if(state.state == "init" && !getStatePlayer(playerId).ack){
+		if(state.state == "init"){
 			document.querySelector("#acknowledge").classList.remove("no-display")
 		}
 	}
@@ -113,40 +113,70 @@ function drawState(state){
 	if(state.facist> 4){ document.querySelector("#facist4").classList.add("board-facist-played") }
 	if(state.facist> 5){ document.querySelector("#facist5").classList.add("board-facist-played") }
 	if(state.facist> 6){ document.querySelector("#facist6").classList.add("board-facist-played") }
+	//Fill in the round policies
+	if(state.round && state.round.policies && state.round.policies.length > 0){
+		for(let i = 0; i < state.round.policies.length; i++){
+			document.querySelector("#rp"+(i+1)).classList.remove("round-liberal")
+			document.querySelector("#rp"+(i+1)).classList.remove("round-facist")
+			document.querySelector("#rp"+(i+1)).classList.remove("round-masked")
+			document.querySelector("#rp"+(i+1)).classList.remove("no-display")
+			document.querySelector("#rp"+(i+1)).classList.add("round-"+state.round.policies[i])
+		}
+	}else{
+		document.querySelector("#rp1").classList.add("no-display")
+		document.querySelector("#rp2").classList.add("no-display")
+		document.querySelector("#rp3").classList.add("no-display")
+	}
 
 	//Add player if doesn't exist
+	var tpl = document.querySelector("#my-player")
 	if(state.players){
 		for (let p of state.players) {
 			if(document.querySelector("#player-"+p.id) == null){
-				var a = document.createElement("article")
+				t = tpl.content
+				t.querySelector("img").src = getCachedPlayer(p.id).thumbnailUrl
+				t.querySelector("header").innerHTML = getCachedPlayer(p.id).name
+				a = document.importNode(t,true)
+				a = document.querySelector("#players").appendChild(a)
 				a.id = "player-"+p.id
-				a.classList.add("player")
-				var i = document.createElement("img")
-				var h = document.createElement("header")
-				var f = document.createElement("footer")
-				i.src = getCachedPlayer(p.id).thumbnailUrl
-				//Use players actual name
-				h.innerHTML = getCachedPlayer(p.id).name
-				a.appendChild(i)
-				a.appendChild(h)
-				a.appendChild(f)
-				document.querySelector("#players").appendChild(a)
+				//TODO Something better, ^ seems like when I attach I can't get a ref, and id is lost
+				document.querySelector("#players").lastElementChild.id = "player-"+p.id
 			}
 			document.querySelector("#player-"+p.id+">footer").innerHTML = ""
 			document.querySelector("#player-"+p.id+">img").src = getCachedPlayer(p.id).thumbnailUrl
 			document.querySelector("#player-"+p.id+">header").innerHTML = getCachedPlayer(p.id).name
 
 			if(state.state == ""){
-				if(p.ready){ document.querySelector("#player-"+p.id+">footer").innerHTML = "Ready" }
+				if(p.id == playerId){
+					document.querySelector("#join").classList.add("no-display")
+				}
+				if(p.ready){
+					document.querySelector("#player-"+p.id+">footer").innerHTML = "Ready"
+				}
+				if(p.ready && p.id == playerId){
+					document.querySelector("#join").classList.add("no-display")
+					document.querySelector("#ready").classList.add("no-display")
+				}
 			}
 			if(state.state == "init"){
-				if(p.ack){ document.querySelector("#player-"+p.id+">footer").innerHTML = "Acknowledge" }
+				if(p.ack){
+					document.querySelector("#player-"+p.id+">footer").innerHTML = "Acknowledge"
+				}
+				if(p.id == playerId && p.ack){
+					document.querySelector("#acknowledge").classList.add("no-display")
+				}
+			}
+			if(state.state == "started" && p.id == playerId){
+				document.querySelector("#message").classList.remove("no-display")
 			}
 			if(state.round && state.round.presidentId == p.id){
 				document.querySelector("#player-"+p.id+">footer").innerHTML = "President"
 			}
 			if(state.round && state.round.chancellorId == p.id){
 				document.querySelector("#player-"+p.id+">footer").innerHTML = "Chancellor"
+			}
+			if(p.executedBy != ""){
+				document.querySelector("#player-"+p.id+">footer").innerHTML = "Executed"
 			}
 
 			if(p.party == "facist"){document.querySelector("#player-"+p.id).classList.add("player-party-facist")}

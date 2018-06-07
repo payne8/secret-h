@@ -34,3 +34,15 @@ function acknowledge(){
 		console.log(ret)
 	})
 }
+
+function sendMessage(){
+	sendEvent(gameId, {
+		type: "player.message",
+		playerId: playerId,
+		message: document.querySelector("#message>input").value
+	}).then(function(ret){
+		message: document.querySelector("#message>input").value = ""
+		console.log(ret)
+	})
+	return false
+}

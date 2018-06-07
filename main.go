@@ -12,7 +12,7 @@ import (
 	"sync"
 )
 
-var testingMode = true
+var testingMode = false
 
 func main() {
 	//Specify a file to write all the events to
