@@ -110,9 +110,9 @@ function drawState(state){
 	if(state.facist> 0){ document.querySelector("#facist1").classList.add("board-facist-played") }
 	if(state.facist> 1){ document.querySelector("#facist2").classList.add("board-facist-played") }
 	if(state.facist> 2){ document.querySelector("#facist3").classList.add("board-facist-played") }
-	if(state.facist> 4){ document.querySelector("#facist4").classList.add("board-facist-played") }
-	if(state.facist> 5){ document.querySelector("#facist5").classList.add("board-facist-played") }
-	if(state.facist> 6){ document.querySelector("#facist6").classList.add("board-facist-played") }
+	if(state.facist> 3){ document.querySelector("#facist4").classList.add("board-facist-played") }
+	if(state.facist> 4){ document.querySelector("#facist5").classList.add("board-facist-played") }
+	if(state.facist> 5){ document.querySelector("#facist6").classList.add("board-facist-played") }
 	//Fill in the round policies
 	if(state.round && state.round.policies && state.round.policies.length > 0){
 		for(let i = 0; i < state.round.policies.length; i++){
