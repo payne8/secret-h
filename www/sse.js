@@ -81,7 +81,10 @@ source.addEventListener("player.legislate", function(e){
 	document.querySelector("#log").scrollTop = document.querySelector("#log").scrollHeight;
 	if(d.playerId == playerId){
 		console.log("removing all .request-legislate")
-		document.querySelectorAll(".request-legislate").forEach(function(item){document.querySelector("#actions").removeChild(item)})
+    document.querySelectorAll(".request-legislate").forEach(function(item){document.querySelector("#actions").removeChild(item)})
+    if (window.navigator.vibrate) {
+      window.navigator.vibrate([50, 50, 50, 50, 50]);
+    }
 	}
 }, false)
 
