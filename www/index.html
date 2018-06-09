@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>Secret Hitler</title>
-<script src="fetch.js"></script>
+<link href="styles.css" rel="stylesheet" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 .no-display{
 	display: none;
@@ -11,73 +12,116 @@
 </style>
 </head>
 <body>
-	<header id="header" class="no-display"></header>
-	<form id="login" name="login" class="no-display" action="/api/login" method="POST">
-		<label for="username">Email</label><input type="text" id="username" name="username"/>
-		<label for="password">Password</label><input type="password" id="password" name="password"/>
-		<button>Login</button>
-	</form>
-	<form id="register" name="register" class="no-display">
-		<label for="email">Email</label><input type="text" id="email" name="email"/>
-		<label for="password">Password</label><input type="password" id="password" name="password"/>
-		<button type="button" onClick="indexRegister()">Register</button>
-	</form>
+
+  <header class="header-logo">
+    <div>
+      <img src="./sh-logo.png" />
+      <h2>Join</h2>
+    </div>
+  </header>
+
+  <header id="header" class="no-display"></header>
+
+  <div class="forms">
+
+    <ul class="tabs">
+      <li class="selected" onclick="toggleForms(event, 'login')">Login</li>
+      <li onclick="toggleForms(event, 'register')">Register</li>
+    </ul>
+
+    <form id="login" name="login" action="/api/login" method="POST">
+      <label for="username">Email</label>
+      <input type="text" id="username" name="username" />
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" />
+      <button>Login</button>
+    </form>
+    <form id="register" name="register" class="no-display">
+      <label for="email">Email</label>
+      <input type="text" id="email" name="email" />
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" />
+      <button type="button" onClick="indexRegister()">Register</button>
+    </form>
+
+    <div class="no-display" id="register-complete">
+      <h3>Registration completed!</h3>
+    </div>
+  </div>
 
 	<section id="games">
-	</section>
-	<button onClick="indexCreateGame()">Create Game</button>
-<script>
-function indexRegister(){
-	let data = {};
-	let formdata = new FormData(document.querySelector("#register"));
-	for (let tuple of formdata.entries()) data[tuple[0]] = tuple[1];
+  </section>
 
-	//Submit registration
-	registerPlayer(data).then(function(player){
-		if(player.err){
-			console.log("err")
-			console.log(player)
-		}else{
-			console.log(player)
-			document.querySelector("#register").classList.add("no-display")
-		}
-	})
-}
+  <hr />
 
-function indexCreateGame(){
-	createGame().then(function(game){
-	var l = document.createElement("a")
-	l.innerHTML = "New Game"
-	l.href = "/game.html?gameId=" + game.id;
-	document.querySelector("body").appendChild(l)
-	})
-}
+  <button onClick="indexCreateGame()">Create Game</button>
 
-function drawGames(){
-	getGames().then(function(games){
-		for(let g of games){
-			if(g.state == ""){g.state = "initialized"}
-			var a = document.createElement("article")
-			var l = document.createElement("a")
-			l.innerHTML = g.state + " " + g.players
-			l.href = "/game.html?gameId="+g.id
-			a.appendChild(l)
-			document.querySelector("#games").appendChild(a)
-		}
-	})
-}
-getMe().then(function(me){
-	if(me.err){
-		//There was an error, show login/register
-		document.querySelector("#login").classList.remove("no-display")
-		document.querySelector("#register").classList.remove("no-display")
-	}else{
-		console.log("me")
-		document.querySelector("#header").innerHTML = "Welcome" + me.name
-	}
-}).catch(function(e){
-	console.log(e)
-})
-drawGames()
-</script>
+  <script src="fetch.js"></script>
+  <script>
+    var selectedForm = 'login';
+
+  function toggleForms(event, formName) {
+    if (formName !== selectedForm) {
+      document.querySelector('#' + selectedForm).classList.toggle('no-display');
+      selectedForm = formName;
+      document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+      event.target.classList.toggle('selected');
+      document.querySelector('#' + formName).classList.toggle('no-display');
+    }
+  }
+
+  function indexRegister(){
+    let data = {};
+    let formdata = new FormData(document.querySelector("#register"));
+    for (let tuple of formdata.entries()) data[tuple[0]] = tuple[1];
+
+    //Submit registration
+    registerPlayer(data).then(function(player){
+      if(player.err){
+        console.log("err")
+        console.log(player)
+      }else{
+        console.log(player)
+        document.querySelector("#register").classList.add("no-display");
+        document.querySelector("#register-complete").classList.remove("no-display");
+      }
+    })
+  }
+
+  function indexCreateGame(){
+    createGame().then(function(game){
+    var l = document.createElement("a")
+    l.innerHTML = "New Game"
+    l.href = "/game.html?gameId=" + game.id;
+    document.querySelector("body").appendChild(l)
+    })
+  }
+
+  function drawGames(){
+    getGames().then(function(games){
+      for(let g of games){
+        if(g.state == ""){g.state = "initialized"}
+        var a = document.createElement("article")
+        var l = document.createElement("a")
+        l.innerHTML = g.state + " " + g.players
+        l.href = "/game.html?gameId="+g.id
+        a.appendChild(l)
+        document.querySelector("#games").appendChild(a)
+      }
+    })
+  }
+  getMe().then(function(me){
+    if(me.err){
+      //There was an error, show login/register
+      document.querySelector("#login").classList.remove("no-display")
+      // document.querySelector("#register").classList.remove("no-display")
+    }else{
+      console.log("me")
+      document.querySelector("#header").innerHTML = "Welcome" + me.name
+    }
+  }).catch(function(e){
+    console.log(e)
+  })
+  drawGames()
+  </script>
 </body>

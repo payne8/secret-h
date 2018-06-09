@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>Secret Hitler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="styles.css" rel="stylesheet" />
 <link rel="stylesheet" type="text/css" href="game.css">
 <script src="fetch.js"></script>
 <script src="events.js"></script>
@@ -11,15 +13,25 @@
 
 </head>
 <body>
+  <header class="header-logo">
+    <div>
+      <img src="./sh-logo.png" />
+      <h2>Game</h2>
+    </div>
+  </header>
 	<header>
 		<p id="me-banner" class="no-display">Welcome</p>
 		<nav id="login">
 			<a href="/">Login</a>
 		</nav>
-	</header>
-	<button id="join" onclick="joinGame()" class="no-display">Join Game</button>
-	<button id="ready" onclick="ready()" class="no-display">Ready</button>
-	<button id="acknowledge" onclick="acknowledge()" class="no-display">Acknowledge</button>
+  </header>
+
+  <div class="button-group center">
+    <button id="join" onclick="joinGame()" class="no-display small">Join Game</button>
+    <button id="ready" onclick="ready()" class="no-display small">Ready</button>
+    <button id="acknowledge" onclick="acknowledge()" class="no-display small">Acknowledge</button>
+  </div>
+
 	<section id="table">
 		<section id="draw"></section>
 		<section id="board">
@@ -64,8 +76,12 @@
 			</article>
 		</template>
 	</aside>
-	<section id="actions"></section>
-	<button onClick="revealInfo()">Reveal/Hide</button>
+  <section id="actions"></section>
+
+  <div class="button-group">
+    <button onClick="revealInfo()">Reveal/Hide</button>
+  </div>
+
 	<section id="log"></section>
 	<form id="message" name="message" class="no-display" onsubmit="return sendMessage()">
 		<input type="text"/><button>Submit</button>
