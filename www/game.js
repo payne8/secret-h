@@ -24,7 +24,7 @@ function getCachedPlayer(playerId){
 		email: "",
 		username: playerId,
 		name: playerId,
-		thumbnailUri: "http://www.gravatar.com/avatar"
+		thumbnailUrl: "http://www.gravatar.com/avatar"
 	}
 }
 
@@ -106,7 +106,7 @@ function drawState(state){
 	if(state.electionTracker == 1){ document.querySelector("#et1").classList.add("board-election-tracker-spot") }
 	if(state.electionTracker == 2){ document.querySelector("#et2").classList.add("board-election-tracker-spot") }
 	if(state.electionTracker == 3){ document.querySelector("#et3").classList.add("board-election-tracker-spot") }
-	//Fill in the liberal
+	//Fill in the facist
 	if(state.facist> 0){ document.querySelector("#facist1").classList.add("board-facist-played") }
 	if(state.facist> 1){ document.querySelector("#facist2").classList.add("board-facist-played") }
 	if(state.facist> 2){ document.querySelector("#facist3").classList.add("board-facist-played") }
