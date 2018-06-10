@@ -1,0 +1,816 @@
+openapi: "3.0.1"
+info:
+  title: "Secret Hitler"
+  description: "Web app companion to playing Secret Hitler"
+  contact:
+    name: "Sean Murphy"
+    url: "www.murphysean.com"
+    email: "murphysean84@gmail.com"
+  license:
+    name: "MIT"
+    url: "https://github.com/payne8/secret-h/blob/master/LICENSE"
+  version: "1.0.0"
+servers:
+  - url: "secrethitler.murphysean.com"
+    description: "Cononical version of the application"
+paths:
+  /index.html:
+    get:
+      tags: ["html"]
+      summary: "The Index page"
+      description: "Lists games, allows you to login and register"
+      responses:
+        "200":
+          description: "Web Page"
+  /game.html:
+    get:
+      tags: ["html"]
+      summary: "The Game page"
+      description: "The rendered view of a game"
+      responses:
+        "200":
+          description: "Web Page"
+    parameters:
+      - name: "gameId"
+        in: "query"
+        required: true
+        schema:
+          type: string
+          format: uuid
+  /api/games:
+    summary: "Games API"
+    description: "Create and List games"
+    get:
+      tags: ["api"]
+      summary: "List of games"
+      responses:
+        200:
+          description: "A list of active games"
+    post:
+      tags: ["api"]
+      summary: "Create a new game"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/game"
+      responses:
+        200:
+          description: "The created game"
+  /api/games/{gameId}:
+    parameters:
+      - name: "gameId"
+        schema:
+          type: string
+          format: uuid
+        in: "path"
+        required: true
+    get:
+      tags: ["api"]
+      responses:
+        200:
+          description: "A game object"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/game"
+    put:
+      tags: ["api"]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/game"
+      responses:
+        200:
+          description: "The updated game object"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/game"
+  /api/games/{gameId}/events:
+    parameters:
+    - name: "gameId"
+      schema:
+        type: string
+        format: uuid
+      in: "path"
+      required: true
+    get:
+      tags: ["api"]
+      responses:
+        200:
+          description: "A stream of game events"
+          content:
+            text/event-stream:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - $ref: "#/components/schemas/apiPlayer"
+                    - $ref: "#/components/schemas/playerJoinEvent"
+                    - $ref: "#/components/schemas/playerReadyEvent"
+                    - $ref: "#/components/schemas/playerAcknowledgeEvent"
+                    - $ref: "#/components/schemas/playerNominateEvent"
+                    - $ref: "#/components/schemas/playerVoteEvent"
+                    - $ref: "#/components/schemas/playerLegislateEvent"
+                    - $ref: "#/components/schemas/playerInvestigateEvent"
+                    - $ref: "#/components/schemas/playerSpecialElectionEvent"
+                    - $ref: "#/components/schemas/playerExecuteEvent"
+                    - $ref: "#/components/schemas/playerMessageEvent"
+                    - $ref: "#/components/schemas/assertPoliciesEvent"
+                    - $ref: "#/components/schemas/assertPartyEvent"
+                    - $ref: "#/components/schemas/reactPlayerEvent"
+                    - $ref: "#/components/schemas/reactEventIdEvent"
+                    - $ref: "#/components/schemas/reactStatusEvent"
+                    - $ref: "#/components/schemas/guessEvent"
+                    - $ref: "#/components/schemas/requestAcknowledgeEvent"
+                    - $ref: "#/components/schemas/requestVoteEvent"
+                    - $ref: "#/components/schemas/requestNominateEvent"
+                    - $ref: "#/components/schemas/requestLegislateEvent"
+                    - $ref: "#/components/schemas/requestExecutiveActionEvent"
+                    - $ref: "#/components/schemas/gameVoteResultsEvent"
+                    - $ref: "#/components/schemas/gameInformationEvent"
+                    - $ref: "#/components/schemas/gameUpdateEvent"
+                    - $ref: "#/components/schemas/gameFinishedEvent"
+                  discriminator:
+                    propertyName: type
+    post:
+      tags: ["api"]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/playerJoinEvent"
+                - $ref: "#/components/schemas/playerReadyEvent"
+                - $ref: "#/components/schemas/playerAcknowledgeEvent"
+                - $ref: "#/components/schemas/playerNominateEvent"
+                - $ref: "#/components/schemas/playerVoteEvent"
+                - $ref: "#/components/schemas/playerLegislateEvent"
+                - $ref: "#/components/schemas/playerInvestigateEvent"
+                - $ref: "#/components/schemas/playerSpecialElectionEvent"
+                - $ref: "#/components/schemas/playerExecuteEvent"
+                - $ref: "#/components/schemas/playerMessageEvent"
+                - $ref: "#/components/schemas/assertPoliciesEvent"
+                - $ref: "#/components/schemas/assertPartyEvent"
+                - $ref: "#/components/schemas/reactPlayerEvent"
+                - $ref: "#/components/schemas/reactEventIdEvent"
+                - $ref: "#/components/schemas/reactStatusEvent"
+                - $ref: "#/components/schemas/guessEvent"
+              discriminator:
+                propertyName: type
+      responses:
+        200:
+          description: "The created event object"
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/playerJoinEvent"
+                  - $ref: "#/components/schemas/playerReadyEvent"
+                  - $ref: "#/components/schemas/playerAcknowledgeEvent"
+                  - $ref: "#/components/schemas/playerNominateEvent"
+                  - $ref: "#/components/schemas/playerVoteEvent"
+                  - $ref: "#/components/schemas/playerLegislateEvent"
+                  - $ref: "#/components/schemas/playerInvestigateEvent"
+                  - $ref: "#/components/schemas/playerSpecialElectionEvent"
+                  - $ref: "#/components/schemas/playerExecuteEvent"
+                  - $ref: "#/components/schemas/playerMessageEvent"
+                  - $ref: "#/components/schemas/assertPoliciesEvent"
+                  - $ref: "#/components/schemas/assertPartyEvent"
+                  - $ref: "#/components/schemas/reactPlayerEvent"
+                  - $ref: "#/components/schemas/reactEventIdEvent"
+                  - $ref: "#/components/schemas/reactStatusEvent"
+                  - $ref: "#/components/schemas/guessEvent"
+                discriminator:
+                  propertyName: type
+  /api/players:
+    post:
+      tags: ["api"]
+      summary: "Create a new player"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/apiPlayer"
+      responses:
+        200:
+          description: "The created player object"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/apiPlayer"
+        default:
+          $ref: "#/components/responses/jsonError"
+  /api/players/{playerId}:
+    parameters:
+      - name: "playerId"
+        schema:
+          type: string
+        in: "path"
+        required: true
+    get:
+      tags: ["api"]
+      responses:
+        200:
+          description: "The requested player object"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/apiPlayer"
+        default:
+          $ref: "#/components/responses/jsonError"
+components:
+  schemas:
+    policy:
+      type: string
+      enum: ["liberal","facist","masked"]
+    party:
+      type: string
+      enum: ["liberal","facist","masked"]
+    role:
+      type: string
+      enum: ["liberal","facist","hitler","masked"]
+    gameState:
+      type: string
+      enum: ["","init","started","finished"]
+    roundState:
+      type: string
+      enum: ["","voting","failed","legislating","executive_action","finished"]
+    executiveAction:
+      type: string
+      enum: ["","investigate","peek","special_election","execute"]
+    game:
+      type: object
+      properties:
+        id:
+          type: string
+        secret:
+          type: string
+        eventId:
+          type: number
+        state:
+          $ref: "#/components/schemas/gameState"
+        draw:
+          type: array
+          items:
+            $ref: "#/components/schemas/policy"
+        discard:
+          type: array
+          items:
+            $ref: "#/components/schemas/policy"
+        liberal:
+          type: number
+          minimum: 0
+          maximum: 5
+        facist:
+          type: number
+          minimum: 0
+          maximum: 6
+        electionTracker:
+          type: number
+          minimum: 0
+          maximum: 3
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/player"
+        round:
+          $ref: "#/components/schemas/round"
+        nextPresidentId:
+          type: string
+        previousPresidentId:
+          type: string
+        previousChancellorId:
+          type: string
+        previousEnactedPolicy:
+          type: string
+        specialElectionRoundId:
+          type: number
+        specialElectionPresidentId:
+          type: string
+        winningParty:
+          $ref: "#/components/schemas/party"
+    round:
+      type: object
+      properties:
+        id:
+          type: number
+        presidentId:
+          type: string
+        chancellorId:
+          type: string
+        state:
+          $ref: "#/components/schemas/roundState"
+        votes:
+          type: array
+          items:
+            $ref: "#/components/schemas/vote"
+        policies:
+          type: array
+          items:
+            $ref: "#/components/schemas/policy"
+        enactedPolicy:
+          $ref: "#/components/schemas/policy"
+        executiveAction:
+          $ref: "#/components/schemas/executiveAction"
+    vote:
+      type: object
+      properties:
+        playerId:
+          type: string
+        vote:
+          type: boolean
+    player:
+      type: object
+      properties:
+        id:
+          type: string
+        party:
+          $ref: "#/components/schemas/party"
+        role:
+          $ref: "#/components/schemas/role"
+        ready:
+          type: boolean
+        ack:
+          type: boolean
+        executedBy:
+          type: string
+        investigatedBy:
+          type: string
+        lastAction:
+          type: string
+          format: dateTime
+        status:
+          type: string
+    apiPlayer:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        username:
+          type: string
+        name:
+          type: string
+        thumbnailURL:
+          type: string
+          format: url
+        password:
+          type: string
+          format: password
+    eventType:
+      type: string
+      enum:
+        - "player.join"
+        - "player.ready"
+        - "player.acknowledge"
+        - "player.nominate"
+        - "player.vote"
+        - "player.legislate"
+        - "player.investigate"
+        - "player.special_election"
+        - "player.execute"
+        - "player.message"
+        - "assert.policies"
+        - "assert.party"
+        - "react.player"
+        - "react.event_id"
+        - "react.status"
+        - "guess"
+        - "request.acknowledge"
+        - "request.vote"
+        - "request.nominate"
+        - "request.legislate"
+        - "request.executive_action"
+        - "game.vote_results"
+        - "game.information"
+        - "game.update"
+        - "game.finished"
+    playerJoinEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        player:
+          $ref: "#/components/schemas/player"
+      example:
+        id: 0
+        type: "player.join"
+        moment: "2012-04-23T18:25:43.511Z"
+        player:
+          id: "sean"
+    playerReadyEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        player:
+          $ref: "#/components/schemas/player"
+    playerAcknowledgeEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        player:
+          $ref: "#/components/schemas/player"
+    playerNominateEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        otherPlayerId:
+          type: string
+    playerVoteEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        vote:
+          type: boolean
+    playerLegislateEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        discard:
+          $ref: "#/components/schemas/policy"
+        veto:
+          type: boolean
+    playerInvestigateEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        otherPlayerId:
+          type: string
+    playerSpecialElectionEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        otherPlayerId:
+          type: string
+    playerExecuteEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        otherPlayerId:
+          type: string
+    playerMessageEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        message:
+          type: string
+    assertPoliciesEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        roundId:
+          type: number
+        token:
+          type: string
+        policySource:
+          type: string
+          enum: ["player.legislate","peek"]
+        policies:
+          type: array
+          items:
+            $ref: "#/components/schemas/policy"
+    assertPartyEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        roundId:
+          type: number
+        token:
+          type: string
+    reactPlayerEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        reaction:
+          type: string
+        reactPlayerId:
+          type: string
+    reactEventIdEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        reaction:
+          type: string
+        reactEventId:
+          type: number
+    reactStatusEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        reaction:
+          type: string
+    guessEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        facistIds:
+          type: array
+          items:
+            type: string
+        secretHitlerId:
+          type: string
+        winningParty:
+          $ref: "#/components/schemas/party"
+        callEventId:
+          type: number
+    requestAcknowledgeEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+    requestVoteEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        roundId:
+          type: number
+        presidentId:
+          type: string
+        chancellorId:
+          type: string
+    requestNominateEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        roundId:
+          type: number
+    requestLegislateEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        roundId:
+          type: number
+        policies:
+          type: array
+          items:
+            $ref: "#/components/schemas/policy"
+        vetoPossible:
+          type: boolean 
+        veto:
+          type: boolean 
+        token:
+          type: string
+    requestExecutiveActionEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        roundId:
+          type: number
+        executiveAction:
+          $ref: "#/components/schemas/executiveAction"
+    gameVoteResultsEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        succeeded:
+          type: boolean
+        votes:
+          type: array
+          items:
+            $ref: "#/components/schemas/vote"
+    gameInformationEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        playerId:
+          type: string
+        roundId:
+          type: number
+        otherPlayerId:
+          type: string
+        policies:
+          type: array
+          items:
+            $ref: "#/components/schemas/policy"
+        party:
+          $ref: "#/components/schemas/party"
+        token:
+          type: string
+    gameUpdateEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        game:
+          $ref: "#/components/schemas/game"
+    gameFinishedEvent:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          $ref: "#/components/schemas/eventType"
+        moment:
+          type: string
+          format: dateTime
+        winningCondition:
+          type: string
+          enum: ["hitler_chancellor","hitler_executed","policies_enacted"]
+        winningParty:
+          $ref: "#/components/schemas/party"
+  responses:
+    jsonError:
+      description: "Something went wrong"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              err:
+                type: string
+  securitySchemes:
+    cookie:
+      type: "apiKey"
+      description: "Auth Cookie"
+      name: "shsid"
+      in: "cookie"
+    header:
+      type: "apiKey"
+      description: "Bearer token"
+      name: "Authorization"
+      in: "header"
+security:
+  - authenticated_user: []
+  - joined_user: []
+  - administrator: []
