@@ -30,17 +30,17 @@
     </ul>
 
     <form id="login" name="login" action="/api/login" method="POST">
-      <label for="username">Email</label>
+      <label for="username" required autocomplete="email">Email</label>
       <input type="text" id="username" name="username" />
       <label for="password">Password</label>
-      <input type="password" id="password" name="password" />
+      <input type="password" id="password" name="password" required />
       <button>Login</button>
     </form>
     <form id="register" name="register" class="no-display">
       <label for="email">Email</label>
-      <input type="text" id="email" name="email" />
-      <label for="password">Password</label>
-      <input type="password" id="password" name="password" />
+      <input type="text" id="email" name="email" required autocomplete="email" />
+      <label for="register-password">Password</label>
+      <input type="password" id="register-password" name="password" required />
       <button type="button" onClick="indexRegister()">Register</button>
     </form>
 
