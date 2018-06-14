@@ -130,7 +130,7 @@
           if(g.state == ""){g.state = "initialized"}
           var a = document.createElement("article")
           var l = document.createElement("a")
-          l.innerHTML = game.name ? g.name + " — " + g.players + " players joined" : g.state + g.players
+          l.innerHTML = g.name ? g.name + " — " + g.players + " players joined" : g.state + g.players
           l.href = "/game.html?gameId="+g.id
           a.appendChild(l)
           document.querySelector("#games").appendChild(a)
