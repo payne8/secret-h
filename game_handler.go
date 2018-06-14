@@ -49,6 +49,16 @@ func generateName() string {
 	return ""
 }
 
+func nameExists(name string, namePairs []string) bool {
+	for _, line := range namePairs {
+		pair := strings.Split(line, ":")
+		if pair[1] == name {
+			return true
+		}
+	}
+	return false
+}
+
 func (ah APIHandler) CreateGameHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	gameID := GenUUIDv4()
@@ -58,6 +68,12 @@ func (ah APIHandler) CreateGameHandler(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	if name == "" {
 		name = generateName()
+	}
+	namesFile := Reader{"games/names.json"}.Read()
+	namePairs := strings.Split(namesFile, "\r\n")
+
+	for nameExists(name, namePairs) {
+		name = name + "."
 	}
 	// don't allow ":"" or "\r\n" in names
 	name = strings.Replace(name, ":", "", -1)
