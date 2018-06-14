@@ -48,7 +48,7 @@ Creating a Game
 ---
 
 	curl http://localhost:8080/api/games/ -H "Content-Type: application/json" -X POST
-	{"id":"3a37480d-5f65-433c-8f0d-82a3af1f5b59","eventID":1,"state":"","draw":[],"discard":[],"liberal":0,"facist":0,"failedVotes":0,"players":[],"round":{"id":0,"presidentID":"","chancellorID":"","state":"","votes":[],"policies":null,"enactedPolicy":"","executiveAction":""},"nextPresidentID":"","previousPresidentID":"","previousChancellorID":"","specialElectionRoundID":0,"specialElectionPresidentID":"","winningParty":""}
+	{"id":"3a37480d-5f65-433c-8f0d-82a3af1f5b59","eventID":1,"state":"","draw":[],"discard":[],"liberal":0,"fascist":0,"failedVotes":0,"players":[],"round":{"id":0,"presidentID":"","chancellorID":"","state":"","votes":[],"policies":null,"enactedPolicy":"","executiveAction":""},"nextPresidentID":"","previousPresidentID":"","previousChancellorID":"","specialElectionRoundID":0,"specialElectionPresidentID":"","winningParty":""}
 
 Listing Games
 ---
@@ -60,7 +60,7 @@ Getting a Game
 ---
 
 	curl http://localhost:8080/api/games/$GAMEID
-	{"id":"3a37480d-5f65-433c-8f0d-82a3af1f5b59","eventID":1,"state":"","draw":[],"discard":[],"liberal":0,"facist":0,"failedVotes":0,"players":[],"round":{"id":0,"presidentID":"","chancellorID":"","state":"","votes":[],"policies":null,"enactedPolicy":"","executiveAction":""},"nextPresidentID":"","previousPresidentID":"","previousChancellorID":"","specialElectionRoundID":0,"specialElectionPresidentID":"","winningParty":""}
+	{"id":"3a37480d-5f65-433c-8f0d-82a3af1f5b59","eventID":1,"state":"","draw":[],"discard":[],"liberal":0,"fascist":0,"failedVotes":0,"players":[],"round":{"id":0,"presidentID":"","chancellorID":"","state":"","votes":[],"policies":null,"enactedPolicy":"","executiveAction":""},"nextPresidentID":"","previousPresidentID":"","previousChancellorID":"","specialElectionRoundID":0,"specialElectionPresidentID":"","winningParty":""}
 
 
 Posting Events

@@ -225,13 +225,13 @@ components:
   schemas:
     policy:
       type: string
-      enum: ["liberal","facist","masked"]
+      enum: ["liberal","fascist","masked"]
     party:
       type: string
-      enum: ["liberal","facist","masked"]
+      enum: ["liberal","fascist","masked"]
     role:
       type: string
-      enum: ["liberal","facist","hitler","masked"]
+      enum: ["liberal","fascist","hitler","masked"]
     gameState:
       type: string
       enum: ["","init","started","finished"]
@@ -264,7 +264,7 @@ components:
           type: number
           minimum: 0
           maximum: 5
-        facist:
+        fascist:
           type: number
           minimum: 0
           maximum: 6
@@ -628,7 +628,7 @@ components:
           format: dateTime
         playerId:
           type: string
-        facistIds:
+        fascistIds:
           type: array
           items:
             type: string

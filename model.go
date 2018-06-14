@@ -1,20 +1,35 @@
 package main
 
 import (
-	sh "github.com/murphysean/secrethitler"
+	"strings"
 	"time"
+
+	sh "github.com/murphysean/secrethitler"
 )
+
+func getName(id string) string {
+	namesFile := Reader{"games/names.json"}.Read()
+
+	for _, line := range strings.Split(namesFile, "\r\n") {
+		pair := strings.Split(line, ":")
+		if pair[0] == id {
+			return pair[1]
+		}
+	}
+	return ""
+}
 
 func GameFromGame(g sh.Game) Game {
 	ret := Game{}
 	ret.ID = g.ID
+	ret.Name = getName(g.ID)
 	ret.Secret = g.Secret
 	ret.EventID = g.EventID
 	ret.State = g.State
 	ret.Draw = g.Draw
 	ret.Discard = g.Discard
 	ret.Liberal = g.Liberal
-	ret.Facist = g.Facist
+	ret.Fascist = g.Fascist
 	ret.ElectionTracker = g.ElectionTracker
 	ret.Players = []GamePlayer{}
 	for _, p := range g.Players {
@@ -57,13 +72,14 @@ func GameFromGame(g sh.Game) Game {
 
 type Game struct {
 	ID                         string       `json:"id"`
+	Name                       string       `json:"name"`
 	Secret                     string       `json:"secret"`
 	EventID                    int          `json:"eventId"`
 	State                      string       `json:"state"`
 	Draw                       []string     `json:"draw"`
 	Discard                    []string     `json:"discard"`
 	Liberal                    int          `json:"liberal"`
-	Facist                     int          `json:"facist"`
+	Fascist                    int          `json:"fascist"`
 	ElectionTracker            int          `json:"electionTracker"`
 	Players                    []GamePlayer `json:"players"`
 	Round                      Round        `json:"round"`

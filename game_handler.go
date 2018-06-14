@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/microcosm-cc/bluemonday"
-	sh "github.com/murphysean/secrethitler"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -14,9 +12,16 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/microcosm-cc/bluemonday"
+	sh "github.com/murphysean/secrethitler"
 )
 
 type Writer struct {
+	Name string
+}
+
+type Reader struct {
 	Name string
 }
 
@@ -31,12 +36,33 @@ func (w Writer) Write(b []byte) (int, error) {
 	return f.Write(b)
 }
 
+func (r Reader) Read() string {
+	b, err := ioutil.ReadFile(r.Name) // just pass the file name
+	if err != nil {
+		fmt.Print(err)
+	}
+	str := string(b) // convert content to a 'string'
+	return str       // print the content as a 'string'
+}
+
+func generateName() string {
+	return ""
+}
+
 func (ah APIHandler) CreateGameHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	gameID := GenUUIDv4()
 	game := sh.NewSecretHitler()
 	game.ID = gameID
 	game.Log = Writer{"games/" + gameID + ".json"}
+	name := r.URL.Query().Get("name")
+	if name == "" {
+		name = generateName()
+	}
+	// don't allow ":"" or "\r\n" in names
+	name = strings.Replace(name, ":", "", -1)
+	name = strings.Replace(name, "\r\n", "", -1)
+	Writer{"games/names.json"}.Write([]byte(game.ID + ":" + name + "\r\n"))
 	//Drop a game update event that sets the gameID
 	actx := context.Background()
 	actx = context.WithValue(actx, "playerID", "engine")
@@ -65,14 +91,18 @@ func (ah APIHandler) GetGamesHandler(w http.ResponseWriter, r *http.Request) {
 		ID      string `json:"id"`
 		State   string `json:"state"`
 		Players int    `json:"players"`
+		Name    string `json:"name"`
 	}
 	ret := make([]sg, 0)
 	ah.m.RLock()
 	for _, shg := range ah.ActiveGames {
+		game := GameFromGame(shg.Game)
 		ret = append(ret, sg{
 			ID:      shg.Game.ID,
 			State:   shg.Game.State,
-			Players: len(shg.Game.Players)})
+			Players: len(shg.Game.Players),
+			Name:    game.Name,
+		})
 	}
 	ah.m.RUnlock()
 	e := json.NewEncoder(w)

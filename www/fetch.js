@@ -34,8 +34,12 @@ function getState(gameId){
 	}).then(response => response.json())
 }
 
-function createGame(){
-	return fetch("/api/games/", {
+function createGame(name){
+	var url = "/api/games/";
+	if (name) {
+		url = url + "?name=" + name
+	}
+	return fetch(url, {
 		body: JSON.stringify({}),
 		credentials: "same-origin",
 		headers: {"Content-Type": "application/json"},

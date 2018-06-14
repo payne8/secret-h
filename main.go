@@ -5,11 +5,12 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	sh "github.com/murphysean/secrethitler"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
+
+	sh "github.com/murphysean/secrethitler"
 )
 
 var testingMode = false

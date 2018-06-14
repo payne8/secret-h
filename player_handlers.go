@@ -108,6 +108,7 @@ func (ah APIHandler) CreatePlayerHandler(w http.ResponseWriter, r *http.Request)
 	g, err := GetGravatar(p.Email)
 	if err != nil {
 		fmt.Println(err)
+		fmt.Println("error getting gravatar")
 		http.Error(w, JsonErrorString(err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -131,6 +132,7 @@ func (ah APIHandler) CreatePlayerHandler(w http.ResponseWriter, r *http.Request)
 	b, err := json.Marshal(&p)
 	if err != nil {
 		fmt.Println(err)
+		fmt.Println("Error marshaling password?")
 		http.Error(w, JsonErrorString(err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -138,6 +140,7 @@ func (ah APIHandler) CreatePlayerHandler(w http.ResponseWriter, r *http.Request)
 	err = ioutil.WriteFile("players/"+p.ID+".json", b, os.ModePerm)
 	if err != nil {
 		fmt.Println(err)
+		fmt.Println("error writing to file")
 		http.Error(w, JsonErrorString(err.Error()), http.StatusInternalServerError)
 		return
 	}
