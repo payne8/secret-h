@@ -274,11 +274,11 @@ source.addEventListener("request.legislate", function(e){
 					p2.innerHTML = "Tell other players how many liberal policies you were dealt"
 					a2.appendChild(p2)
 					f2 = function(e){
-						apolicies = ["facist","facist","facist"]
+						apolicies = ["fascist","fascist","fascist"]
 						if(this.name == "1"){
-							apolicies = ["liberal","facist","facist"]
+							apolicies = ["liberal","fascist","fascist"]
 						}else if(this.name == "2"){
-							apolicies = ["liberal","liberal","facist"]
+							apolicies = ["liberal","liberal","fascist"]
 						}else if(this.name == "3"){
 							apolicies = ["liberal","liberal","liberal"]
 						}
@@ -394,11 +394,11 @@ source.addEventListener("game.information", function(e){
 			p.innerHTML = "Tell other players how many liberal policies are on the top of the draw pile"
 			a.appendChild(p)
 			f = function(e){
-				apolicies = ["facist","facist","facist"]
+				apolicies = ["fascist","fascist","fascist"]
 				if(this.name == "1"){
-					apolicies = ["liberal","facist","facist"]
+					apolicies = ["liberal","fascist","fascist"]
 				}else if(this.name == "2"){
-					apolicies = ["liberal","liberal","facist"]
+					apolicies = ["liberal","liberal","fascist"]
 				}else if(this.name == "3"){
 					apolicies = ["liberal","liberal","liberal"]
 				}
@@ -454,8 +454,8 @@ source.addEventListener("game.information", function(e){
 			bl.innerHTML = "Liberal"
 			bl.addEventListener("click",f)
 			bf = document.createElement("button")
-			bf.name = "facist"
-			bf.innerHTML = "Facist"
+			bf.name = "fascist"
+			bf.innerHTML = "Fascist"
 			bf.addEventListener("click",f)
 			a.appendChild(bl)
 			a.appendChild(bf)

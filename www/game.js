@@ -106,18 +106,18 @@ function drawState(state){
 	if(state.electionTracker == 1){ document.querySelector("#et1").classList.add("board-election-tracker-spot") }
 	if(state.electionTracker == 2){ document.querySelector("#et2").classList.add("board-election-tracker-spot") }
 	if(state.electionTracker == 3){ document.querySelector("#et3").classList.add("board-election-tracker-spot") }
-	//Fill in the facist
-	if(state.facist> 0){ document.querySelector("#facist1").classList.add("board-facist-played") }
-	if(state.facist> 1){ document.querySelector("#facist2").classList.add("board-facist-played") }
-	if(state.facist> 2){ document.querySelector("#facist3").classList.add("board-facist-played") }
-	if(state.facist> 3){ document.querySelector("#facist4").classList.add("board-facist-played") }
-	if(state.facist> 4){ document.querySelector("#facist5").classList.add("board-facist-played") }
-	if(state.facist> 5){ document.querySelector("#facist6").classList.add("board-facist-played") }
+	//Fill in the fascist
+	if(state.fascist> 0){ document.querySelector("#fascist1").classList.add("board-fascist-played") }
+	if(state.fascist> 1){ document.querySelector("#fascist2").classList.add("board-fascist-played") }
+	if(state.fascist> 2){ document.querySelector("#fascist3").classList.add("board-fascist-played") }
+	if(state.fascist> 3){ document.querySelector("#fascist4").classList.add("board-fascist-played") }
+	if(state.fascist> 4){ document.querySelector("#fascist5").classList.add("board-fascist-played") }
+	if(state.fascist> 5){ document.querySelector("#fascist6").classList.add("board-fascist-played") }
 	//Fill in the round policies
 	if(state.round && state.round.policies && state.round.policies.length > 0){
 		for(let i = 0; i < state.round.policies.length; i++){
 			document.querySelector("#rp"+(i+1)).classList.remove("round-liberal")
-			document.querySelector("#rp"+(i+1)).classList.remove("round-facist")
+			document.querySelector("#rp"+(i+1)).classList.remove("round-fascist")
 			document.querySelector("#rp"+(i+1)).classList.remove("round-masked")
 			document.querySelector("#rp"+(i+1)).classList.remove("no-display")
 			document.querySelector("#rp"+(i+1)).classList.add("round-"+state.round.policies[i])
@@ -179,7 +179,7 @@ function drawState(state){
 				document.querySelector("#player-"+p.id+">footer").innerHTML = "Executed"
 			}
 
-			if(p.party == "facist"){document.querySelector("#player-"+p.id).classList.add("player-party-facist")}
+			if(p.party == "fascist"){document.querySelector("#player-"+p.id).classList.add("player-party-fascist")}
 			if(p.party == "liberal"){document.querySelector("#player-"+p.id).classList.add("player-party-liberal")}
 			if(p.role== "hitler"){document.querySelector("#player-"+p.id).classList.add("player-role-hitler")}
 		}
@@ -194,8 +194,8 @@ function drawState(state){
 	if(state.winningParty == "liberal"){
 		document.querySelector("#win").innerHTML = "Liberals Win!"
 	}
-	if(state.winningParty == "facist"){
-		document.querySelector("#win").innerHTML = "Facists Win!"
+	if(state.winningParty == "fascist"){
+		document.querySelector("#win").innerHTML = "Fascists Win!"
 	}
 }
 

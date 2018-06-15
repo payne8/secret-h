@@ -14,7 +14,7 @@ func GameFromGame(g sh.Game) Game {
 	ret.Draw = g.Draw
 	ret.Discard = g.Discard
 	ret.Liberal = g.Liberal
-	ret.Facist = g.Facist
+	ret.Fascist = g.Fascist
 	ret.ElectionTracker = g.ElectionTracker
 	ret.Players = []GamePlayer{}
 	for _, p := range g.Players {
@@ -63,7 +63,7 @@ type Game struct {
 	Draw                       []string     `json:"draw"`
 	Discard                    []string     `json:"discard"`
 	Liberal                    int          `json:"liberal"`
-	Facist                     int          `json:"facist"`
+	Fascist                    int          `json:"fascist"`
 	ElectionTracker            int          `json:"electionTracker"`
 	Players                    []GamePlayer `json:"players"`
 	Round                      Round        `json:"round"`
