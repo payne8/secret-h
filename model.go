@@ -1,13 +1,28 @@
 package main
 
 import (
-	sh "github.com/murphysean/secrethitler"
+	"strings"
 	"time"
+
+	sh "github.com/murphysean/secrethitler"
 )
+
+func getName(id string) string {
+	namesFile := Reader{"games/names.json"}.Read()
+
+	for _, line := range strings.Split(namesFile, "\r\n") {
+		pair := strings.Split(line, ":")
+		if pair[0] == id {
+			return pair[1]
+		}
+	}
+	return ""
+}
 
 func GameFromGame(g sh.Game) Game {
 	ret := Game{}
 	ret.ID = g.ID
+	ret.Name = getName(g.ID)
 	ret.Secret = g.Secret
 	ret.EventID = g.EventID
 	ret.State = g.State
@@ -57,6 +72,7 @@ func GameFromGame(g sh.Game) Game {
 
 type Game struct {
 	ID                         string       `json:"id"`
+	Name                       string       `json:"name"`
 	Secret                     string       `json:"secret"`
 	EventID                    int          `json:"eventId"`
 	State                      string       `json:"state"`

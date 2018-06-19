@@ -8,14 +8,15 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/howeyc/gopass"
-	sh "github.com/murphysean/secrethitler"
-	tb "github.com/nsf/termbox-go"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/howeyc/gopass"
+	sh "github.com/murphysean/secrethitler"
+	tb "github.com/nsf/termbox-go"
 )
 
 var (
@@ -382,7 +383,7 @@ func main() {
 						se = sh.PlayerLegislateEvent{
 							BaseEvent: sh.BaseEvent{Type: sh.TypePlayerLegislate},
 							PlayerID:  ctx.Value("playerID").(string),
-							Discard:   sh.PolicyFacist,
+							Discard:   sh.Policyfascist,
 						}
 					case 'v':
 						se = sh.PlayerLegislateEvent{
@@ -408,20 +409,20 @@ func main() {
 					case '0':
 						if myAsserts[0].Type == sh.TypeAssertPolicies {
 							for i, _ := range myAsserts[0].Policies {
-								myAsserts[0].Policies[i] = sh.PolicyFacist
+								myAsserts[0].Policies[i] = sh.Policyfascist
 							}
 						}
 					case '1':
 						if myAsserts[0].Type == sh.TypeAssertPolicies {
 							for i, _ := range myAsserts[0].Policies {
-								myAsserts[0].Policies[i] = sh.PolicyFacist
+								myAsserts[0].Policies[i] = sh.Policyfascist
 							}
 							myAsserts[0].Policies[0] = sh.PolicyLiberal
 						}
 					case '2':
 						if myAsserts[0].Type == sh.TypeAssertPolicies {
 							for i, _ := range myAsserts[0].Policies {
-								myAsserts[0].Policies[i] = sh.PolicyFacist
+								myAsserts[0].Policies[i] = sh.Policyfascist
 							}
 							myAsserts[0].Policies[0] = sh.PolicyLiberal
 							myAsserts[0].Policies[1] = sh.PolicyLiberal
@@ -438,7 +439,7 @@ func main() {
 						}
 					case 'f':
 						if myAsserts[0].Type == sh.TypeAssertParty {
-							myAsserts[0].Party = sh.PartyFacist
+							myAsserts[0].Party = sh.Partyfascist
 						}
 					}
 					err = sendEvent(ctx, myAsserts[0])
@@ -485,7 +486,7 @@ func drawMessages(msgs []string) {
 }
 
 func drawEventPrompt(g sh.Game, e sh.Event, aes []sh.AssertEvent) {
-	cards := g.Facist + g.Liberal + len(g.Discard) + len(g.Draw) + len(g.Round.Policies)
+	cards := g.Fascist + g.Liberal + len(g.Discard) + len(g.Draw) + len(g.Round.Policies)
 	drawStringAt(fmt.Sprintf("Policy Count: %d", cards), 0, 20, tb.ColorDefault, tb.ColorDefault)
 	if e == nil {
 		if len(aes) > 0 {
@@ -517,7 +518,7 @@ func drawEventPrompt(g sh.Game, e sh.Event, aes []sh.AssertEvent) {
 	case sh.TypeRequestLegislate:
 		le := e.(sh.RequestEvent)
 		if g.Round.State == sh.RoundStateLegislating {
-			if g.Facist >= 5 && g.Round.ChancellorID == le.PlayerID {
+			if g.Fascist >= 5 && g.Round.ChancellorID == le.PlayerID {
 				drawStringAt("Choose a policy to discard(l/f) or (v)eto:", 0, 10, tb.ColorDefault, tb.ColorDefault)
 			} else if le.Veto {
 				drawStringAt("Chancelor has requested (v)eto, press f otherwise:", 0, 10, tb.ColorDefault, tb.ColorDefault)
@@ -550,7 +551,7 @@ func drawPlayers(g sh.Game) {
 			fallthrough
 		case sh.GameStateStarted:
 			switch p.Party {
-			case sh.RoleFacist:
+			case sh.Rolefascist:
 				fg = tb.ColorRed
 			case sh.RoleLiberal:
 				fg = tb.ColorBlue
@@ -614,32 +615,32 @@ func drawGameBoard(g sh.Game) {
 		drawStringAt("Game Over - "+g.WinningParty+" Win!", 20, 3, tb.ColorDefault, tb.ColorDefault)
 	}
 
-	if g.Facist > 0 {
+	if g.Fascist > 0 {
 		tb.SetCell(20, 2, '█', tb.ColorRed, tb.ColorDefault)
 	} else {
 		tb.SetCell(20, 2, '░', tb.ColorRed, tb.ColorDefault)
 	}
-	if g.Facist > 1 {
+	if g.Fascist > 1 {
 		tb.SetCell(21, 2, '█', tb.ColorRed, tb.ColorDefault)
 	} else {
 		tb.SetCell(21, 2, '░', tb.ColorRed, tb.ColorDefault)
 	}
-	if g.Facist > 2 {
+	if g.Fascist > 2 {
 		tb.SetCell(22, 2, '█', tb.ColorRed, tb.ColorDefault)
 	} else {
 		tb.SetCell(22, 2, '░', tb.ColorRed, tb.ColorDefault)
 	}
-	if g.Facist > 3 {
+	if g.Fascist > 3 {
 		tb.SetCell(23, 2, '█', tb.ColorRed, tb.ColorDefault)
 	} else {
 		tb.SetCell(23, 2, '░', tb.ColorRed, tb.ColorDefault)
 	}
-	if g.Facist > 4 {
+	if g.Fascist > 4 {
 		tb.SetCell(24, 2, '█', tb.ColorRed, tb.ColorDefault)
 	} else {
 		tb.SetCell(24, 2, '░', tb.ColorRed, tb.ColorDefault)
 	}
-	if g.Facist > 5 {
+	if g.Fascist > 5 {
 		tb.SetCell(25, 2, '█', tb.ColorRed, tb.ColorDefault)
 	} else {
 		tb.SetCell(25, 2, '░', tb.ColorRed, tb.ColorDefault)
@@ -649,7 +650,7 @@ func drawGameBoard(g sh.Game) {
 		char := '?'
 		fg := tb.ColorDefault
 		switch p {
-		case sh.PolicyFacist:
+		case sh.Policyfascist:
 			char = 'F'
 			fg = tb.ColorRed
 		case sh.PolicyLiberal:
@@ -669,7 +670,7 @@ func drawGameBoard(g sh.Game) {
 		char := '?'
 		fg := tb.ColorDefault
 		switch p {
-		case sh.PolicyFacist:
+		case sh.Policyfascist:
 			char = 'F'
 			fg = tb.ColorRed
 		case sh.PolicyLiberal:
@@ -688,7 +689,7 @@ func drawGameBoard(g sh.Game) {
 
 	for i, p := range g.Round.Policies {
 		switch p {
-		case sh.PolicyFacist:
+		case sh.Policyfascist:
 			tb.SetCell(20+i, 4, 'F', tb.ColorRed, tb.ColorDefault)
 		case sh.PolicyLiberal:
 			tb.SetCell(20+i, 4, 'L', tb.ColorBlue, tb.ColorDefault)
