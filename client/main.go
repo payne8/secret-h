@@ -8,14 +8,15 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/howeyc/gopass"
-	sh "github.com/murphysean/secrethitler"
-	tb "github.com/nsf/termbox-go"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/howeyc/gopass"
+	sh "github.com/murphysean/secrethitler"
+	tb "github.com/nsf/termbox-go"
 )
 
 var (
@@ -485,7 +486,7 @@ func drawMessages(msgs []string) {
 }
 
 func drawEventPrompt(g sh.Game, e sh.Event, aes []sh.AssertEvent) {
-	cards := g.fascist + g.Liberal + len(g.Discard) + len(g.Draw) + len(g.Round.Policies)
+	cards := g.Fascist + g.Liberal + len(g.Discard) + len(g.Draw) + len(g.Round.Policies)
 	drawStringAt(fmt.Sprintf("Policy Count: %d", cards), 0, 20, tb.ColorDefault, tb.ColorDefault)
 	if e == nil {
 		if len(aes) > 0 {
@@ -517,7 +518,7 @@ func drawEventPrompt(g sh.Game, e sh.Event, aes []sh.AssertEvent) {
 	case sh.TypeRequestLegislate:
 		le := e.(sh.RequestEvent)
 		if g.Round.State == sh.RoundStateLegislating {
-			if g.fascist >= 5 && g.Round.ChancellorID == le.PlayerID {
+			if g.Fascist >= 5 && g.Round.ChancellorID == le.PlayerID {
 				drawStringAt("Choose a policy to discard(l/f) or (v)eto:", 0, 10, tb.ColorDefault, tb.ColorDefault)
 			} else if le.Veto {
 				drawStringAt("Chancelor has requested (v)eto, press f otherwise:", 0, 10, tb.ColorDefault, tb.ColorDefault)
@@ -614,32 +615,32 @@ func drawGameBoard(g sh.Game) {
 		drawStringAt("Game Over - "+g.WinningParty+" Win!", 20, 3, tb.ColorDefault, tb.ColorDefault)
 	}
 
-	if g.fascist > 0 {
+	if g.Fascist > 0 {
 		tb.SetCell(20, 2, '█', tb.ColorRed, tb.ColorDefault)
 	} else {
 		tb.SetCell(20, 2, '░', tb.ColorRed, tb.ColorDefault)
 	}
-	if g.fascist > 1 {
+	if g.Fascist > 1 {
 		tb.SetCell(21, 2, '█', tb.ColorRed, tb.ColorDefault)
 	} else {
 		tb.SetCell(21, 2, '░', tb.ColorRed, tb.ColorDefault)
 	}
-	if g.fascist > 2 {
+	if g.Fascist > 2 {
 		tb.SetCell(22, 2, '█', tb.ColorRed, tb.ColorDefault)
 	} else {
 		tb.SetCell(22, 2, '░', tb.ColorRed, tb.ColorDefault)
 	}
-	if g.fascist > 3 {
+	if g.Fascist > 3 {
 		tb.SetCell(23, 2, '█', tb.ColorRed, tb.ColorDefault)
 	} else {
 		tb.SetCell(23, 2, '░', tb.ColorRed, tb.ColorDefault)
 	}
-	if g.fascist > 4 {
+	if g.Fascist > 4 {
 		tb.SetCell(24, 2, '█', tb.ColorRed, tb.ColorDefault)
 	} else {
 		tb.SetCell(24, 2, '░', tb.ColorRed, tb.ColorDefault)
 	}
-	if g.fascist > 5 {
+	if g.Fascist > 5 {
 		tb.SetCell(25, 2, '█', tb.ColorRed, tb.ColorDefault)
 	} else {
 		tb.SetCell(25, 2, '░', tb.ColorRed, tb.ColorDefault)
