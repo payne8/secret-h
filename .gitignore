@@ -24,3 +24,5 @@ www/dist
 www/.cache
 
 myapp
+runit.sh
+src/**/*
